@@ -7,16 +7,23 @@ JOIN IIT_COLLEGE c ON h.College_ID = c.College_ID
 JOIN BRANCH b ON h.Branch_ID = b.Branch_ID
 WHERE h.Category = 'OPEN' AND h.Year = (SELECT MAX(Year) FROM HISTORICAL_CUTOFF);
 
-CREATE OR REPLACE VIEW v_recommendation_full AS
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW v_recommendation_full AS
 SELECT st.Name AS Student_Name, s.Session_Name, c.College_Name, b.Branch_Name,
        r.Risk_Level, r.Overall_Score, r.Match_Pct, 
-       t.Trend_Status, t.Rank_Shift_1Y, t.Confidence
+       COALESCE(t.Trend_Status, 'Stable') AS Trend_Status, 
+       t.Rank_Shift_1Y, 
+       COALESCE(t.Confidence, 'Medium') AS Confidence
 FROM RECOMMENDATION_RESULT r
 JOIN IIT_COLLEGE c ON r.College_ID = c.College_ID
 JOIN BRANCH b ON r.Branch_ID = b.Branch_ID
 JOIN SEARCH_SESSION s ON r.Session_ID = s.Session_ID
 JOIN STUDENT st ON s.Student_ID = st.Student_ID
-LEFT JOIN BRANCH_TREND_ANALYTICS t ON r.College_ID = t.College_ID AND r.Branch_ID = t.Branch_ID;
+LEFT JOIN STUDENT_PROFILE sp ON st.Student_ID = sp.Student_ID
+LEFT JOIN BRANCH_TREND_ANALYTICS t ON r.College_ID = t.College_ID 
+                                  AND r.Branch_ID = t.Branch_ID
+                                  AND t.Category = COALESCE(sp.Category, 'OPEN')
+                                  AND t.Seat_Pool = CASE WHEN sp.Gender = 'Female' THEN 'Female-Only' ELSE 'Gender-Neutral' END
+                                  AND t.Program_Type = '4-year B.Tech';
 
 CREATE OR REPLACE VIEW v_explain_result AS
 SELECT rd.Result_ID, c.College_Name, b.Branch_Name, ef.Factor_Name, 
