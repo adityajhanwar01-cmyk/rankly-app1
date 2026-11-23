@@ -70,3 +70,27 @@ SELECT s1.Student_ID, s1.Choice_Order AS Reach_Order, s1.College_Name AS Reach_C
 FROM v_shortlist_ordered s1
 JOIN v_shortlist_ordered s2 ON s1.Student_ID = s2.Student_ID
 WHERE s1.Risk_Level = 'Reach' AND s2.Risk_Level = 'Safe' AND s1.Choice_Order > s2.Choice_Order;
+
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW v_recommendation_top_colleges AS
+WITH RankedRecs AS (
+    SELECT 
+        st.Name AS Student_Name,
+        s.Session_ID,
+        sp.JEE_Adv_Rank,
+        c.College_Name,
+        b.Branch_Name,
+        r.Risk_Level,
+        r.Overall_Score,
+        r.Match_Pct,
+        ROW_NUMBER() OVER (PARTITION BY s.Session_ID, c.College_ID ORDER BY r.Overall_Score DESC, hc.Closing_Rank ASC) as branch_rank_in_college
+    FROM RECOMMENDATION_RESULT r
+    JOIN SEARCH_SESSION s ON r.Session_ID = s.Session_ID
+    JOIN STUDENT st ON s.Student_ID = st.Student_ID
+    JOIN STUDENT_PROFILE sp ON st.Student_ID = sp.Student_ID
+    JOIN IIT_COLLEGE c ON r.College_ID = c.College_ID
+    JOIN BRANCH b ON r.Branch_ID = b.Branch_ID
+    JOIN HISTORICAL_CUTOFF hc ON r.Cutoff_ID = hc.Cutoff_ID
+)
+SELECT Student_Name, Session_ID, JEE_Adv_Rank, College_Name, Branch_Name, Risk_Level, Overall_Score, Match_Pct
+FROM RankedRecs
+WHERE branch_rank_in_college = 1;
