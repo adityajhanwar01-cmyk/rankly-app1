@@ -1376,7 +1376,7 @@
                 <div class="find-card-row-2col">
                     <div class="field">
                         <label class="field__label" for="rankInput">
-                            <span>JEE Advanced CRL rank<span class="req">*</span></span>
+                            <span id="rankInputLabel">JEE Advanced CRL rank<span class="req">*</span></span>
                             <span class="pill pill--brand" id="optionsPill" style="display:none;height:20px;padding:0 8px;font-size:11px;">
                                 <span id="optionsCount">--</span> options
                             </span>
@@ -1390,11 +1390,11 @@
                                 max="250000"
                                 inputmode="numeric"
                                 oninput="onRankInputChange(this.value)"
-                                aria-label="JEE Advanced CRL rank"
+                                aria-label="JEE Advanced rank"
                             >
-                            <span class="input-trailing-text">AIR</span>
+                            <span class="input-trailing-text" id="rankInputBadge">AIR</span>
                         </div>
-                        <div class="field__help">Common Rank List, 1 to 2,50,000</div>
+                        <div class="field__help" id="rankInputHelp">Common Rank List (OPEN quota, 1 to 28,000)</div>
                     </div>
 
                     <div class="field">

@@ -855,10 +855,40 @@ window.selectCategory = function(btn) {
     const rVal = parseInt(document.getElementById('rankInput')?.value || findState.rank);
     findState.categoryRank = cat !== 'OPEN' ? (rVal || null) : null;
 
+    // Dynamic Label, Badge & Helper updates for Category quota
+    const lblEl = document.getElementById('rankInputLabel');
+    const badgeEl = document.getElementById('rankInputBadge');
+    const helpEl = document.getElementById('rankInputHelp');
+    const rankInp = document.getElementById('rankInput');
+
+    if (cat === 'OPEN') {
+        if (lblEl) lblEl.innerHTML = 'JEE Advanced CRL rank<span class="req">*</span>';
+        if (badgeEl) badgeEl.textContent = 'AIR';
+        if (helpEl) helpEl.textContent = 'Common Rank List (OPEN quota, 1 to 28,000)';
+        if (rankInp) rankInp.placeholder = 'e.g. 1842';
+    } else {
+        if (lblEl) lblEl.innerHTML = `${cat} Category rank<span class="req">*</span>`;
+        if (badgeEl) badgeEl.textContent = cat;
+        if (rankInp) {
+            if (cat === 'OBC-NCL') {
+                rankInp.placeholder = 'e.g. 850';
+                if (helpEl) helpEl.textContent = 'Enter your OBC-NCL category rank (1 to 12,600)';
+            } else if (cat === 'SC') {
+                rankInp.placeholder = 'e.g. 350';
+                if (helpEl) helpEl.textContent = 'Enter your SC category rank (1 to 4,800)';
+            } else if (cat === 'ST') {
+                rankInp.placeholder = 'e.g. 150';
+                if (helpEl) helpEl.textContent = 'Enter your ST category rank (1 to 2,100)';
+            } else if (cat === 'EWS') {
+                rankInp.placeholder = 'e.g. 450';
+                if (helpEl) helpEl.textContent = 'Enter your EWS category rank (1 to 4,500)';
+            }
+        }
+    }
+
     // Refresh options count with the newly selected category
-    const rankInput = document.getElementById('rankInput');
-    if (rankInput && rankInput.value && window.onRankInputChange) {
-        window.onRankInputChange(rankInput.value);
+    if (rankInp && rankInp.value && window.onRankInputChange) {
+        window.onRankInputChange(rankInp.value);
     }
 };
 
