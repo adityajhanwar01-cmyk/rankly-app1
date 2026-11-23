@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.8"/>
+      <stop offset="60%" stop-color="#090d16" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#05070a" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="cardGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.8"/>
+    </linearGradient>
+    <linearGradient id="limeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a3e635"/>
+      <stop offset="100%" stop-color="#4ade80"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bgGlow)"/>
+
+  <!-- Subtle Grid Pattern -->
+  <g opacity="0.12" stroke="#94a3b8" stroke-width="1">
+    <line x1="0" y1="120" x2="1280" y2="120"/>
+    <line x1="0" y1="240" x2="1280" y2="240"/>
+    <line x1="0" y1="360" x2="1280" y2="360"/>
+    <line x1="0" y1="480" x2="1280" y2="480"/>
+    <line x1="0" y1="600" x2="1280" y2="600"/>
+    <line x1="160" y1="0" x2="160" y2="720"/>
+    <line x1="320" y1="0" x2="320" y2="720"/>
+    <line x1="480" y1="0" x2="480" y2="720"/>
+    <line x1="640" y1="0" x2="640" y2="720"/>
+    <line x1="800" y1="0" x2="800" y2="720"/>
+    <line x1="960" y1="0" x2="960" y2="720"/>
+    <line x1="1120" y1="0" x2="1120" y2="720"/>
+  </g>
+
+  <!-- Simulated Mockup Frame -->
+  <rect x="140" y="80" width="1000" height="560" rx="16" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5" opacity="0.95"/>
+  
+  <!-- Window Header -->
+  <line x1="140" y1="130" x2="1140" y2="130" stroke="#334155" stroke-width="1"/>
+  <circle cx="170" cy="105" r="5" fill="#ef4444" opacity="0.7"/>
+  <circle cx="190" cy="105" r="5" fill="#f59e0b" opacity="0.7"/>
+  <circle cx="210" cy="105" r="5" fill="#10b981" opacity="0.7"/>
+  <text x="640" y="110" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="600" text-anchor="middle" letter-spacing="0.5">RANKLY INTERACTIVE ADVISOR · 5-STEP WALKTHROUGH</text>
+
+  <!-- Sidebar Mock -->
+  <rect x="170" y="160" width="220" height="440" rx="10" fill="#0b1120" stroke="#1e293b" stroke-width="1"/>
+  <rect x="190" y="185" width="90" height="10" rx="3" fill="#64748b"/>
+  <rect x="190" y="210" width="180" height="44" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="205" y="237" fill="#f8fafc" font-family="monospace" font-size="14" font-weight="700"># 1842</text>
+  <text x="265" y="236" fill="#a3e635" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11">OPEN · Male</text>
+  
+  <!-- Preference sliders mock -->
+  <rect x="190" y="280" width="120" height="8" rx="2" fill="#475569"/>
+  <rect x="190" y="300" width="180" height="6" rx="3" fill="#1e293b"/>
+  <rect x="190" y="300" width="135" height="6" rx="3" fill="#a3e635"/>
+  <rect x="190" y="325" width="100" height="8" rx="2" fill="#475569"/>
+  <rect x="190" y="345" width="180" height="6" rx="3" fill="#1e293b"/>
+  <rect x="190" y="345" width="155" height="6" rx="3" fill="#a3e635"/>
+  <rect x="190" y="370" width="110" height="8" rx="2" fill="#475569"/>
+  <rect x="190" y="390" width="180" height="6" rx="3" fill="#1e293b"/>
+  <rect x="190" y="390" width="90" height="6" rx="3" fill="#a3e635"/>
+
+  <!-- Main Content Mock -->
+  <rect x="420" y="160" width="690" height="440" rx="10" fill="#0b1120" stroke="#1e293b" stroke-width="1"/>
+  
+  <!-- Match Card 1 -->
+  <rect x="445" y="185" width="640" height="110" rx="10" fill="#131c31" stroke="#334155"/>
+  <circle cx="485" cy="240" r="24" fill="none" stroke="#22c55e" stroke-width="4"/>
+  <text x="485" y="245" fill="#22c55e" font-family="monospace" font-size="12" font-weight="700" text-anchor="middle">94%</text>
+  <text x="530" y="225" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="16" font-weight="700">IIT Bombay · Electrical Engineering</text>
+  <text x="530" y="248" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12">4-Year B.Tech · Final Closing 1,842 · Safe Probability Tier</text>
+  <rect x="530" y="262" width="70" height="18" rx="9" fill="#14532d" stroke="#22c55e" stroke-width="0.5"/>
+  <text x="565" y="275" fill="#4ade80" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="600" text-anchor="middle">SAFE TIER</text>
+
+  <!-- Match Card 2 -->
+  <rect x="445" y="315" width="640" height="110" rx="10" fill="#131c31" stroke="#334155"/>
+  <circle cx="485" cy="370" r="24" fill="none" stroke="#eab308" stroke-width="4"/>
+  <text x="485" y="375" fill="#eab308" font-family="monospace" font-size="12" font-weight="700" text-anchor="middle">76%</text>
+  <text x="530" y="355" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="16" font-weight="700">IIT Delhi · Mathematics and Computing</text>
+  <text x="530" y="378" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12">4-Year B.Tech · Final Closing 1,650 · Target / Moderate Tier</text>
+  <rect x="530" y="392" width="85" height="18" rx="9" fill="#713f12" stroke="#eab308" stroke-width="0.5"/>
+  <text x="572" y="405" fill="#fde047" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="600" text-anchor="middle">MODERATE</text>
+
+  <!-- Match Card 3 -->
+  <rect x="445" y="445" width="640" height="110" rx="10" fill="#131c31" stroke="#334155"/>
+  <circle cx="485" cy="500" r="24" fill="none" stroke="#38bdf8" stroke-width="4"/>
+  <text x="485" y="505" fill="#38bdf8" font-family="monospace" font-size="12" font-weight="700" text-anchor="middle">58%</text>
+  <text x="530" y="485" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="16" font-weight="700">IIT Madras · Computer Science &amp; Engineering</text>
+  <text x="530" y="508" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12">4-Year B.Tech · Final Closing 1,480 · Ambitious Reach Tier</text>
+  <rect x="530" y="522" width="75" height="18" rx="9" fill="#0c4a6e" stroke="#38bdf8" stroke-width="0.5"/>
+  <text x="567" y="535" fill="#7dd3fc" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10" font-weight="600" text-anchor="middle">REACH TIER</text>
+
+</svg>

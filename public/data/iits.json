@@ -1,0 +1,186 @@
+[
+  {
+    "college_id": 1,
+    "name": "IIT Bombay",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "lat": 19.1334,
+    "lng": 72.9133
+  },
+  {
+    "college_id": 2,
+    "name": "IIT Delhi",
+    "city": "New Delhi",
+    "state": "Delhi",
+    "lat": 28.545,
+    "lng": 77.1926
+  },
+  {
+    "college_id": 3,
+    "name": "IIT Madras",
+    "city": "Chennai",
+    "state": "Tamil Nadu",
+    "lat": 12.9915,
+    "lng": 80.2337
+  },
+  {
+    "college_id": 4,
+    "name": "IIT Kanpur",
+    "city": "Kanpur",
+    "state": "Uttar Pradesh",
+    "lat": 26.5123,
+    "lng": 80.2329
+  },
+  {
+    "college_id": 5,
+    "name": "IIT Kharagpur",
+    "city": "Kharagpur",
+    "state": "West Bengal",
+    "lat": 22.3149,
+    "lng": 87.3105
+  },
+  {
+    "college_id": 6,
+    "name": "IIT Roorkee",
+    "city": "Roorkee",
+    "state": "Uttarakhand",
+    "lat": 29.8649,
+    "lng": 77.8965
+  },
+  {
+    "college_id": 7,
+    "name": "IIT Guwahati",
+    "city": "Guwahati",
+    "state": "Assam",
+    "lat": 26.1924,
+    "lng": 91.6932
+  },
+  {
+    "college_id": 8,
+    "name": "IIT Hyderabad",
+    "city": "Hyderabad",
+    "state": "Telangana",
+    "lat": 17.5947,
+    "lng": 78.123
+  },
+  {
+    "college_id": 9,
+    "name": "IIT Indore",
+    "city": "Indore",
+    "state": "Madhya Pradesh",
+    "lat": 22.5204,
+    "lng": 75.9207
+  },
+  {
+    "college_id": 10,
+    "name": "IIT (BHU) Varanasi",
+    "city": "Varanasi",
+    "state": "Uttar Pradesh",
+    "lat": 25.2623,
+    "lng": 82.9893
+  },
+  {
+    "college_id": 11,
+    "name": "IIT (ISM) Dhanbad",
+    "city": "Dhanbad",
+    "state": "Jharkhand",
+    "lat": 23.8144,
+    "lng": 86.4412
+  },
+  {
+    "college_id": 12,
+    "name": "IIT Ropar",
+    "city": "Rupnagar",
+    "state": "Punjab",
+    "lat": 30.9753,
+    "lng": 76.4738
+  },
+  {
+    "college_id": 13,
+    "name": "IIT Patna",
+    "city": "Patna",
+    "state": "Bihar",
+    "lat": 25.5357,
+    "lng": 84.8512
+  },
+  {
+    "college_id": 14,
+    "name": "IIT Gandhinagar",
+    "city": "Gandhinagar",
+    "state": "Gujarat",
+    "lat": 23.2114,
+    "lng": 72.6842
+  },
+  {
+    "college_id": 15,
+    "name": "IIT Bhubaneswar",
+    "city": "Bhubaneswar",
+    "state": "Odisha",
+    "lat": 20.1485,
+    "lng": 85.6712
+  },
+  {
+    "college_id": 16,
+    "name": "IIT Mandi",
+    "city": "Mandi",
+    "state": "Himachal Pradesh",
+    "lat": 31.7813,
+    "lng": 76.9941
+  },
+  {
+    "college_id": 17,
+    "name": "IIT Jodhpur",
+    "city": "Jodhpur",
+    "state": "Rajasthan",
+    "lat": 26.4711,
+    "lng": 73.1134
+  },
+  {
+    "college_id": 18,
+    "name": "IIT Tirupati",
+    "city": "Tirupati",
+    "state": "Andhra Pradesh",
+    "lat": 13.7088,
+    "lng": 79.5936
+  },
+  {
+    "college_id": 19,
+    "name": "IIT Palakkad",
+    "city": "Palakkad",
+    "state": "Kerala",
+    "lat": 10.8037,
+    "lng": 76.7441
+  },
+  {
+    "college_id": 20,
+    "name": "IIT Dharwad",
+    "city": "Dharwad",
+    "state": "Karnataka",
+    "lat": 15.4227,
+    "lng": 74.9866
+  },
+  {
+    "college_id": 21,
+    "name": "IIT Jammu",
+    "city": "Jammu",
+    "state": "Jammu & Kashmir",
+    "lat": 32.8029,
+    "lng": 74.8967
+  },
+  {
+    "college_id": 22,
+    "name": "IIT Goa",
+    "city": "Goa",
+    "state": "Goa",
+    "lat": 15.4226,
+    "lng": 73.9798
+  },
+  {
+    "college_id": 23,
+    "name": "IIT Bhilai",
+    "city": "Bhilai",
+    "state": "Chhattisgarh",
+    "lat": 21.2505,
+    "lng": 81.3119
+  }
+]

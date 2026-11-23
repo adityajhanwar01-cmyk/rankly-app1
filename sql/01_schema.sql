@@ -1,0 +1,207 @@
+DROP DATABASE IF EXISTS rankly;
+CREATE DATABASE rankly;
+USE rankly;
+
+CREATE TABLE IIT_COLLEGE (
+    College_ID INT AUTO_INCREMENT PRIMARY KEY,
+    College_Name VARCHAR(150) NOT NULL UNIQUE,
+    City VARCHAR(100) NOT NULL,
+    State VARCHAR(100) NOT NULL
+) COMMENT = 'Layer 3: Core IIT Data Repository';
+
+CREATE TABLE BRANCH (
+    Branch_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Branch_Name VARCHAR(150) NOT NULL,
+    Branch_Code VARCHAR(20) NOT NULL UNIQUE
+) COMMENT = 'Layer 3: Core IIT Data Repository';
+
+CREATE TABLE COLLEGE_INFO (
+    Info_ID INT AUTO_INCREMENT PRIMARY KEY,
+    College_ID INT NOT NULL UNIQUE,
+    Annual_Fee DECIMAL(10,2),
+    Placement_Pct DECIMAL(5,2),
+    Avg_Package DECIMAL(10,2),
+    Hostel_Rating DECIMAL(3,2),
+    Mess_Rating DECIMAL(3,2),
+    Campus_Rating DECIMAL(3,2),
+    NIRF_Rank INT,
+    FOREIGN KEY (College_ID) REFERENCES IIT_COLLEGE(College_ID) ON DELETE CASCADE,
+    CHECK (Hostel_Rating BETWEEN 0 AND 5),
+    CHECK (Mess_Rating BETWEEN 0 AND 5),
+    CHECK (Campus_Rating BETWEEN 0 AND 5)
+) COMMENT = 'Layer 3: Core IIT Data Repository';
+
+CREATE TABLE HISTORICAL_CUTOFF (
+    Cutoff_ID INT AUTO_INCREMENT PRIMARY KEY,
+    College_ID INT NOT NULL,
+    Branch_ID INT NOT NULL,
+    Year INT NOT NULL,
+    Category VARCHAR(20) NOT NULL,
+    Opening_Rank INT NOT NULL,
+    Closing_Rank INT NOT NULL,
+    FOREIGN KEY (College_ID) REFERENCES IIT_COLLEGE(College_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Branch_ID) REFERENCES BRANCH(Branch_ID) ON DELETE CASCADE,
+    UNIQUE KEY uk_cutoff (College_ID, Branch_ID, Year, Category),
+    CHECK (Opening_Rank > 0),
+    CHECK (Closing_Rank > 0),
+    CHECK (Opening_Rank <= Closing_Rank),
+    CHECK (Year BETWEEN 2000 AND 2030),
+    INDEX idx_cutoff_lookup (Category, Year, Closing_Rank)
+) COMMENT = 'Layer 3: Core IIT Data Repository';
+
+CREATE TABLE STUDENT (
+    Student_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Email VARCHAR(150) NOT NULL UNIQUE,
+    DOB DATE,
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) COMMENT = 'Layer 1: Student Identity & Preference';
+
+CREATE TABLE STUDENT_PROFILE (
+    Profile_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Student_ID INT NOT NULL UNIQUE,
+    JEE_Adv_Rank INT NOT NULL,
+    Category VARCHAR(20) NOT NULL DEFAULT 'OPEN',
+    Home_City VARCHAR(100),
+    Home_State VARCHAR(100),
+    FOREIGN KEY (Student_ID) REFERENCES STUDENT(Student_ID) ON DELETE CASCADE,
+    CHECK (JEE_Adv_Rank > 0),
+    INDEX idx_profile_rank (JEE_Adv_Rank)
+) COMMENT = 'Layer 1: Student Identity & Preference';
+
+CREATE TABLE PREFERENCE_CRITERION (
+    Criterion_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Criterion_Name VARCHAR(100) NOT NULL UNIQUE,
+    Default_Weight INT NOT NULL,
+    CHECK (Default_Weight BETWEEN 0 AND 100)
+) COMMENT = 'Layer 1: Student Identity & Preference';
+
+CREATE TABLE EVALUATION_FACTOR (
+    Factor_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Factor_Name VARCHAR(100) NOT NULL,
+    Criterion_ID INT NOT NULL UNIQUE,
+    FOREIGN KEY (Criterion_ID) REFERENCES PREFERENCE_CRITERION(Criterion_ID) ON DELETE CASCADE
+) COMMENT = 'Layer 3: Core IIT Data Repository';
+
+CREATE TABLE STUDENT_PREFERENCE (
+    Pref_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Student_ID INT NOT NULL,
+    Criterion_ID INT NOT NULL,
+    Importance_Wt INT NOT NULL,
+    FOREIGN KEY (Student_ID) REFERENCES STUDENT(Student_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Criterion_ID) REFERENCES PREFERENCE_CRITERION(Criterion_ID) ON DELETE CASCADE,
+    UNIQUE KEY uk_student_criterion (Student_ID, Criterion_ID),
+    CHECK (Importance_Wt BETWEEN 0 AND 100)
+) COMMENT = 'Layer 1: Student Identity & Preference';
+
+CREATE TABLE FAMILY_PREFERENCE (
+    Family_Pref_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Student_ID INT NOT NULL,
+    Criterion_ID INT NOT NULL,
+    Parent_Wt INT NOT NULL,
+    FOREIGN KEY (Student_ID) REFERENCES STUDENT(Student_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Criterion_ID) REFERENCES PREFERENCE_CRITERION(Criterion_ID) ON DELETE CASCADE,
+    UNIQUE KEY uk_family_criterion (Student_ID, Criterion_ID),
+    CHECK (Parent_Wt BETWEEN 0 AND 100)
+) COMMENT = 'Layer 1: Student Identity & Preference';
+
+CREATE TABLE SEARCH_SESSION (
+    Session_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Student_ID INT NOT NULL,
+    Session_Name VARCHAR(200),
+    Location_Pref VARCHAR(200),
+    Budget_Range VARCHAR(50),
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (Student_ID) REFERENCES STUDENT(Student_ID) ON DELETE CASCADE
+) COMMENT = 'Layer 2: Session & Recommendation';
+
+CREATE TABLE RECOMMENDATION_RESULT (
+    Result_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Session_ID INT NOT NULL,
+    College_ID INT NOT NULL,
+    Branch_ID INT NOT NULL,
+    Cutoff_ID INT NOT NULL,
+    Overall_Score DECIMAL(6,2),
+    Match_Pct DECIMAL(5,2),
+    Risk_Level VARCHAR(20),
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (Session_ID) REFERENCES SEARCH_SESSION(Session_ID) ON DELETE CASCADE,
+    FOREIGN KEY (College_ID) REFERENCES IIT_COLLEGE(College_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Branch_ID) REFERENCES BRANCH(Branch_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Cutoff_ID) REFERENCES HISTORICAL_CUTOFF(Cutoff_ID) ON DELETE RESTRICT,
+    INDEX idx_result_session_score (Session_ID, Overall_Score)
+) COMMENT = 'Layer 2: Session & Recommendation';
+
+CREATE TABLE RECOMMENDATION_DETAIL (
+    Detail_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Result_ID INT NOT NULL,
+    Factor_ID INT NOT NULL,
+    Score DECIMAL(6,2),
+    Weight_Used INT,
+    FOREIGN KEY (Result_ID) REFERENCES RECOMMENDATION_RESULT(Result_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Factor_ID) REFERENCES EVALUATION_FACTOR(Factor_ID) ON DELETE CASCADE
+) COMMENT = 'Layer 2: Session & Recommendation';
+
+CREATE TABLE STUDENT_SHORTLIST (
+    Shortlist_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Student_ID INT NOT NULL,
+    Result_ID INT NOT NULL UNIQUE,
+    Choice_Order INT NOT NULL,
+    Added_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (Student_ID) REFERENCES STUDENT(Student_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Result_ID) REFERENCES RECOMMENDATION_RESULT(Result_ID) ON DELETE CASCADE,
+    UNIQUE KEY uk_student_order (Student_ID, Choice_Order),
+    CHECK (Choice_Order > 0)
+) COMMENT = 'Layer 2: Session & Recommendation';
+
+CREATE TABLE BRANCH_TREND_ANALYTICS (
+    Trend_ID INT AUTO_INCREMENT PRIMARY KEY,
+    College_ID INT NOT NULL,
+    Branch_ID INT NOT NULL,
+    Category VARCHAR(20) NOT NULL DEFAULT 'OPEN',
+    Rank_Shift_1Y DECIMAL(6,2),
+    Rank_Shift_2Y DECIMAL(6,2),
+    Trend_Status VARCHAR(20),
+    Confidence VARCHAR(20),
+    Last_Updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (College_ID) REFERENCES IIT_COLLEGE(College_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Branch_ID) REFERENCES BRANCH(Branch_ID) ON DELETE CASCADE,
+    UNIQUE KEY uk_trend (College_ID, Branch_ID, Category)
+) COMMENT = 'Layer 4: Analytical Intelligence';
+
+CREATE TABLE PEER_CHOICE_TREND (
+    Peer_ID INT AUTO_INCREMENT PRIMARY KEY,
+    College_ID INT NOT NULL,
+    Branch_ID INT NOT NULL,
+    Profile_Category VARCHAR(20) NOT NULL,
+    Rank_Range_Start INT NOT NULL,
+    Rank_Range_End INT NOT NULL,
+    Selection_Count INT DEFAULT 0,
+    FOREIGN KEY (College_ID) REFERENCES IIT_COLLEGE(College_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Branch_ID) REFERENCES BRANCH(Branch_ID) ON DELETE CASCADE,
+    CHECK (Rank_Range_Start < Rank_Range_End),
+    INDEX idx_peer_lookup (Profile_Category, Rank_Range_Start, Rank_Range_End)
+) COMMENT = 'Layer 4: Analytical Intelligence';
+
+CREATE TABLE FAMILY_CONSENSUS (
+    Consensus_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Student_ID INT NOT NULL,
+    Session_ID INT NOT NULL,
+    Result_ID INT NOT NULL,
+    Student_Score DECIMAL(6,2),
+    Parent_Score DECIMAL(6,2),
+    Consensus_Score DECIMAL(6,2),
+    Disagreement_Flags TEXT,
+    FOREIGN KEY (Student_ID) REFERENCES STUDENT(Student_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Session_ID) REFERENCES SEARCH_SESSION(Session_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Result_ID) REFERENCES RECOMMENDATION_RESULT(Result_ID) ON DELETE CASCADE
+) COMMENT = 'Layer 4: Analytical Intelligence';
+
+CREATE TABLE AUDIT_LOG (
+    Audit_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Student_ID INT,
+    Field_Changed VARCHAR(100),
+    Old_Value VARCHAR(255),
+    New_Value VARCHAR(255),
+    Changed_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) COMMENT = 'Layer 4: Analytical Intelligence';

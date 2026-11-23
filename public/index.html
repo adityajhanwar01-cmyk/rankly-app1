@@ -1,0 +1,2511 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Rankly — IIT JoSAA Counselling & Seat Recommendation Cockpit with 2025 Cutoffs, Branch Trends, and Smart Preferences.">
+    <title>Rankly · Find Your IIT</title>
+    <!-- Google Fonts: Bricolage Grotesque, Instrument Serif, and Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="components.css">
+    <link rel="stylesheet" href="design-system.css">
+<!-- Lucide icons via CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+<!-- Top 2.5px Progress Bar (active only during 3-step Find flow) -->
+<div class="top-progress-track" id="topProgressTrack" style="display:none;">
+    <div class="top-progress-bar" id="topProgressBar"></div>
+</div>
+
+<!-- Noise overlay -->
+<div class="noise-layer" aria-hidden="true"></div>
+
+<!-- Loading overlay (hidden by default) -->
+<div class="loading-overlay hidden" id="loadingOverlay" style="display:none;">
+    <div class="loading-spinner"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+<!-- ─── EXPLAIN DRAWER ─── -->
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeExplainDrawer()"></div>
+<aside class="drawer" id="explainDrawer" aria-label="Score explanation" role="dialog">
+    <div class="drawer-header">
+        <div>
+            <div class="stat-label">Score Breakdown</div>
+            <div class="drawer-title" id="drawerTitle">IIT Bombay — Computer Science</div>
+        </div>
+        <button class="drawer-close" onclick="closeExplainDrawer()" aria-label="Close drawer">
+            <i data-lucide="x" width="18" height="18"></i>
+        </button>
+    </div>
+    <div class="drawer-body" id="drawerBody">
+        <div class="empty-state">
+            <div class="empty-state__icon"><i data-lucide="bar-chart-2" width="28" height="28"></i></div>
+            <div class="empty-state__title">No data loaded</div>
+        </div>
+    </div>
+</aside>
+
+<!-- ─── TREND DETAIL RIGHT SHEET ─── -->
+<div class="drawer-backdrop" id="trendDetailBackdrop" onclick="closeTrendDetailSheet()"></div>
+<aside class="drawer" id="trendDetailDrawer" aria-label="Trend detail analysis" role="dialog">
+    <div class="drawer-header">
+        <div>
+            <div class="stat-label">Cutoff Trajectory Analysis</div>
+            <div class="drawer-title" id="trendDetailTitle">IIT Bombay — CSE</div>
+        </div>
+        <button class="drawer-close" onclick="closeTrendDetailSheet()" aria-label="Close trend details">
+            <i data-lucide="x" width="18" height="18"></i>
+        </button>
+    </div>
+    <div class="drawer-body" id="trendDetailBody"></div>
+</aside>
+
+<!-- ─── COMMAND PALETTE ─── -->
+<div class="cmd-backdrop" id="cmdBackdrop" onclick="closeCmdPalette()">
+    <div class="cmd-palette" onclick="event.stopPropagation()" role="dialog" aria-label="Command palette">
+        <div class="cmd-input-row">
+            <i data-lucide="search" width="18" height="18" style="color:var(--muted);flex-shrink:0;"></i>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search pages, actions…" autocomplete="off"
+                   oninput="filterCmdResults(this.value)" onkeydown="handleCmdKey(event)">
+            <span class="cmd-kbd">Esc</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+    </div>
+</div>
+
+<!-- ─── TOP NAVBAR ─── -->
+<div class="scroll-progress" id="scrollProgress"></div>
+<header class="top-header" id="topHeader">
+    <div class="top-header__inner container">
+
+        <!-- Brand: Rankly -->
+        <a href="#" class="brand" onclick="switchTab('home'); return false;" aria-label="Rankly Home" style="gap:10px;">
+            <div class="brand__logo" aria-hidden="true" style="background:#2563eb; color:#ffffff; display:flex; align-items:center; justify-content:center; border-radius:8px; width:30px; height:30px;">
+                <i data-lucide="graduation-cap" width="16" height="16"></i>
+            </div>
+            <div>
+                <div class="brand__title" style="font-weight:800; font-size:15px; letter-spacing:-0.01em;">Rankly</div>
+                <div style="font-size:10.5px; color:var(--muted); font-weight:600; line-height:1;">Find Your IIT</div>
+            </div>
+        </a>
+
+        <!-- Nav groups — Main Navigation -->
+        <nav class="nav-groups" id="navGroups" aria-label="Main Navigation">
+            <!-- 1. Discover -->
+            <div class="nav-dropdown-wrapper" data-dropdown="discover">
+                <button class="nav-dropdown-trigger" id="navTriggerDiscover" aria-haspopup="true" aria-expanded="false" onclick="toggleNavDropdown('discover')">
+                    Discover
+                    <i data-lucide="chevron-down" class="caret-icon" width="14" height="14"></i>
+                </button>
+                <div class="nav-mega-panel" id="navPanelDiscover" role="menu">
+                    <a class="mega-menu-item" data-tab="find" onclick="switchTab('find'); closeAllNavDropdowns(); return false;" role="menuitem" tabindex="0">
+                        <div class="icon-tile placement"><i data-lucide="compass" width="18" height="18"></i></div>
+                        <div>
+                            <div class="mega-menu-title">Find my IIT</div>
+                            <div class="mega-menu-desc">Personalised seat recommendations</div>
+                        </div>
+                        <span class="mega-menu-dot"></span>
+                    </a>
+                    <a class="mega-menu-item" data-tab="results" onclick="switchTab('results'); closeAllNavDropdowns(); return false;" role="menuitem" tabindex="0">
+                        <div class="icon-tile branch"><i data-lucide="layout-grid" width="18" height="18"></i></div>
+                        <div>
+                            <div class="mega-menu-title">My Results</div>
+                            <div class="mega-menu-desc">Ranked seat options with fit scores</div>
+                        </div>
+                        <span class="mega-menu-dot"></span>
+                    </a>
+                    
+                </div>
+            </div>
+
+            <!-- 2. Insights -->
+            <div class="nav-dropdown-wrapper" data-dropdown="insights">
+                <button class="nav-dropdown-trigger" id="navTriggerInsights" aria-haspopup="true" aria-expanded="false" onclick="toggleNavDropdown('insights')">
+                    Insights
+                    <i data-lucide="chevron-down" class="caret-icon" width="14" height="14"></i>
+                </button>
+                <div class="nav-mega-panel" id="navPanelInsights" role="menu">
+                    <a class="mega-menu-item" data-tab="trends" onclick="switchTab('trends'); closeAllNavDropdowns(); return false;" role="menuitem" tabindex="0">
+                        <div class="icon-tile fees"><i data-lucide="trending-up" width="18" height="18"></i></div>
+                        <div>
+                            <div class="mega-menu-title">Branch Trends</div>
+                            <div class="mega-menu-desc">3-year cutoff tightening &amp; loosening</div>
+                        </div>
+                        <span class="mega-menu-dot"></span>
+                    </a>
+                    <a class="mega-menu-item" data-tab="peer" onclick="switchTab('peer'); closeAllNavDropdowns(); return false;" role="menuitem" tabindex="0">
+                        <div class="icon-tile location"><i data-lucide="users" width="18" height="18"></i></div>
+                        <div>
+                            <div class="mega-menu-title">Students Like You</div>
+                            <div class="mega-menu-desc">Decisions from similar-rank peers</div>
+                        </div>
+                        <span class="mega-menu-dot"></span>
+                    </a>
+                    <a class="mega-menu-item" data-tab="compare" onclick="switchTab('compare'); closeAllNavDropdowns(); return false;" role="menuitem" tabindex="0">
+                        <div class="icon-tile campus"><i data-lucide="git-compare" width="18" height="18"></i></div>
+                        <div>
+                            <div class="mega-menu-title">Compare Options</div>
+                            <div class="mega-menu-desc">Side-by-side radar overlay</div>
+                        </div>
+                        <span class="mega-menu-dot"></span>
+                    </a>
+                </div>
+            </div>
+
+        </nav>
+
+        <!-- Right utilities -->
+        <div class="header-utilities">
+
+
+            <!-- Theme toggle -->
+            <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Light / Dark" aria-label="Toggle theme">
+                <i data-lucide="sun" width="16" height="16" id="themeIcon"></i>
+            </button>
+
+            <!-- Command palette trigger -->
+            <button class="theme-toggle" onclick="openCmdPalette()" title="Command palette (Ctrl+K)" aria-label="Open command palette">
+                <i data-lucide="search" width="16" height="16"></i>
+            </button>
+
+            <!-- API status pill (hidden) -->
+            <span class="demo-data-pill" id="apiStatusPill" style="display:none !important;">
+                <span class="pulse-dot" aria-hidden="true"></span>
+                <span id="apiStatusText">Live API</span>
+            </span>
+
+            <!-- Primary CTA -->
+            <button class="btn-nav-cta" onclick="switchTab('find')">Find my IIT</button>
+            
+
+            <!-- Hamburger (mobile) -->
+            <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Toggle navigation" aria-expanded="false">
+                <span class="hamburger__line"></span>
+                <span class="hamburger__line"></span>
+                <span class="hamburger__line"></span>
+            </button>
+        </div>
+    </div>
+</header>
+
+
+
+
+<!-- ─── MOBILE NAVIGATION SHEET (<1024px) ─── -->
+<div class="mobile-nav-backdrop" id="mobileNavBackdrop" onclick="closeMobileNav()"></div>
+<div class="mobile-nav-sheet" id="mobileNavSheet" role="dialog" aria-label="Mobile Navigation">
+    <div class="mobile-nav-header">
+        <a href="#" class="brand" onclick="switchTab('home'); closeMobileNav(); return false;">
+            <div class="brand__logo">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="20" x2="4" y2="14"></line><line x1="12" y1="20" x2="12" y2="8"></line><line x1="20" y1="20" x2="20" y2="4"></line></svg>
+            </div>
+            <div class="brand__title">Rankly</div>
+        </a>
+        <button class="drawer-close" onclick="closeMobileNav()" aria-label="Close menu">
+            <i data-lucide="x" width="18" height="18"></i>
+        </button>
+    </div>
+
+    <div style="flex:1; display:flex; flex-direction:column; gap:var(--space-4);">
+        <!-- Accordion 1: Discover -->
+        <div class="mobile-accordion-group">
+            <div class="mobile-accordion-header">Discover</div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <a class="mega-menu-item" onclick="switchTab('find'); closeMobileNav();">
+                    <div class="icon-tile placement"><i data-lucide="compass" width="16" height="16"></i></div>
+                    <div>
+                        <div class="mega-menu-title">Find my IIT</div>
+                        <div class="mega-menu-desc">Personalised seat recommendations</div>
+                    </div>
+                </a>
+                <a class="mega-menu-item" onclick="switchTab('results'); closeMobileNav();">
+                    <div class="icon-tile branch"><i data-lucide="layout-grid" width="16" height="16"></i></div>
+                    <div>
+                        <div class="mega-menu-title">My Results</div>
+                        <div class="mega-menu-desc">Ranked seat options with fit score</div>
+                    </div>
+                </a>
+                
+            </div>
+        </div>
+
+        <!-- Accordion 2: Insights -->
+        <div class="mobile-accordion-group">
+            <div class="mobile-accordion-header">Insights</div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <a class="mega-menu-item" onclick="switchTab('trends'); closeMobileNav();">
+                    <div class="icon-tile fees"><i data-lucide="trending-up" width="16" height="16"></i></div>
+                    <div>
+                        <div class="mega-menu-title">Branch Trends</div>
+                        <div class="mega-menu-desc">3-year cutoff trajectory</div>
+                    </div>
+                </a>
+                <a class="mega-menu-item" onclick="switchTab('peer'); closeMobileNav();">
+                    <div class="icon-tile location"><i data-lucide="users" width="16" height="16"></i></div>
+                    <div>
+                        <div class="mega-menu-title">Students Like You</div>
+                        <div class="mega-menu-desc">Peer decisions &amp; insights</div>
+                    </div>
+                </a>
+                <a class="mega-menu-item" onclick="switchTab('compare'); closeMobileNav();">
+                    <div class="icon-tile campus"><i data-lucide="git-compare" width="16" height="16"></i></div>
+                    <div>
+                        <div class="mega-menu-title">Compare Options</div>
+                        <div class="mega-menu-desc">Side-by-side radar overlay</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        </div>
+
+    <!-- Pinned CTA at the bottom -->
+    <div style="margin-top:auto; padding-top:var(--space-4); border-top:1px solid var(--border);">
+        <button class="btn btn--primary btn--lg" style="width:100%; justify-content:center;" onclick="switchTab('find'); closeMobileNav();">
+            <i data-lucide="compass" width="18" height="18"></i>
+            Find my IIT
+        </button>
+    </div>
+</div>
+
+<main class="main-content">
+
+<!-- ═══════════════════════════════════════════════════
+     TAB: HOME / LANDING PAGE
+     ═══════════════════════════════════════════════════ -->
+<div class="tab-content active landing-page" id="tab-home">
+
+    <!-- Dual Campus Marquee Hero -->
+    <section class="hero" id="heroSection">
+        <div class="hero__dual-container">
+            
+            <!-- LEFT COLUMN: Vertical Marquee (Scrolls DOWN, 70s) -->
+            <div class="campus-marquee campus-marquee--down hero-marquee-col" id="marqueeColLeft" aria-hidden="true">
+                <div class="campus-marquee__track">
+                    <!-- Set 1 (6 distinct IITs) -->
+                    <!-- IIT Bombay -->
+                    <div class="campus-card campus-card--aspect-3-4">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-bombay.webp" alt="IIT Bombay campus" loading="eager" class="campus-card__img" onerror="handleCampusImgError(this, 'B', '#4D7C0F')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(77,124,15,0.20), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#4D7C0F;">B</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Bombay</span>
+                            <span class="campus-card__nirf-pill">NIRF #3</span>
+                        </div>
+                    </div>
+<!-- IIT Madras -->
+                    <div class="campus-card campus-card--aspect-4-5">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-madras.webp" alt="IIT Madras campus" loading="eager" class="campus-card__img" onerror="handleCampusImgError(this, 'M', '#f59e0b')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(245,158,11,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#f59e0b;">M</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Madras</span>
+                            <span class="campus-card__nirf-pill">NIRF #1</span>
+                        </div>
+                    </div>
+<!-- IIT Kharagpur -->
+                    <div class="campus-card campus-card--aspect-3-4">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-kharagpur.webp" alt="IIT Kharagpur campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'Kgp', '#8b5cf6')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(139,92,246,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#8b5cf6;">Kgp</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Kharagpur</span>
+                            <span class="campus-card__nirf-pill">NIRF #6</span>
+                        </div>
+                    </div>
+<!-- IIT Guwahati -->
+                    <div class="campus-card campus-card--aspect-4-5">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-guwahati.webp" alt="IIT Guwahati campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'G', '#ec4899')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(236,72,153,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#ec4899;">G</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Guwahati</span>
+                            <span class="campus-card__nirf-pill">NIRF #7</span>
+                        </div>
+                    </div>
+<!-- IIT (BHU) Varanasi -->
+                    <div class="campus-card campus-card--aspect-3-4">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-bhu.webp" alt="IIT (BHU) Varanasi campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'BHU', '#f97316')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(249,115,22,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#f97316;">BHU</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT (BHU) Varanasi</span>
+                            <span class="campus-card__nirf-pill">NIRF #10</span>
+                        </div>
+                    </div>
+<!-- IIT Jodhpur -->
+                    <div class="campus-card campus-card--aspect-4-5">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-jodhpur.webp" alt="IIT Jodhpur campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'J', '#eab308')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(234,179,8,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#eab308;">J</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Jodhpur</span>
+                            <span class="campus-card__nirf-pill">NIRF #30</span>
+                        </div>
+                    </div>
+<!-- Duplicated Track for Seamless Loop -->
+                    <!-- IIT Bombay -->
+                    <div class="campus-card campus-card--aspect-3-4">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-bombay.webp" alt="IIT Bombay campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'B', '#4D7C0F')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(77,124,15,0.20), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#4D7C0F;">B</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Bombay</span>
+                            <span class="campus-card__nirf-pill">NIRF #3</span>
+                        </div>
+                    </div>
+<!-- IIT Madras -->
+                    <div class="campus-card campus-card--aspect-4-5">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-madras.webp" alt="IIT Madras campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'M', '#f59e0b')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(245,158,11,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#f59e0b;">M</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Madras</span>
+                            <span class="campus-card__nirf-pill">NIRF #1</span>
+                        </div>
+                    </div>
+<!-- IIT Kharagpur -->
+                    <div class="campus-card campus-card--aspect-3-4">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-kharagpur.webp" alt="IIT Kharagpur campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'Kgp', '#8b5cf6')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(139,92,246,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#8b5cf6;">Kgp</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Kharagpur</span>
+                            <span class="campus-card__nirf-pill">NIRF #6</span>
+                        </div>
+                    </div>
+<!-- IIT Guwahati -->
+                    <div class="campus-card campus-card--aspect-4-5">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-guwahati.webp" alt="IIT Guwahati campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'G', '#ec4899')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(236,72,153,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#ec4899;">G</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Guwahati</span>
+                            <span class="campus-card__nirf-pill">NIRF #7</span>
+                        </div>
+                    </div>
+<!-- IIT (BHU) Varanasi -->
+                    <div class="campus-card campus-card--aspect-3-4">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-bhu.webp" alt="IIT (BHU) Varanasi campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'BHU', '#f97316')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(249,115,22,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#f97316;">BHU</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT (BHU) Varanasi</span>
+                            <span class="campus-card__nirf-pill">NIRF #10</span>
+                        </div>
+                    </div>
+<!-- IIT Jodhpur -->
+                    <div class="campus-card campus-card--aspect-4-5">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-jodhpur.webp" alt="IIT Jodhpur campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'J', '#eab308')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(234,179,8,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#eab308;">J</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Jodhpur</span>
+                            <span class="campus-card__nirf-pill">NIRF #30</span>
+                        </div>
+                    </div>
+</div>
+            </div>
+
+            <!-- CENTRE HERO CONTENT -->
+            <div class="hero__center-content">
+                <div class="hero__badge">
+                    <span class="pulse-dot" aria-hidden="true"></span>
+                    JEE Advanced Counselling
+                </div>
+
+                <h1 class="hero__title">
+                    Don't just check<br>your cutoff.<br>
+                    Choose your <em>seat.</em>
+                </h1>
+
+                <p class="hero__subtitle">
+                    Your rank, your priorities, the right IIT branch, with the cutoff maths to prove it.
+                </p>
+
+                <!-- Two Main Hero CTAs -->
+                <div class="hero-cta-group" role="region" aria-label="Hero Quick Actions">
+                    <button class="btn btn--primary btn--hero-primary" onclick="switchTab('find'); window.scrollTo({ top: 0, behavior: 'smooth' });" aria-label="Find my IIT">
+                        <i data-lucide="search" width="18" height="18"></i>
+                        <span>Find my IIT</span>
+                        <i data-lucide="arrow-right" width="18" height="18"></i>
+                    </button>
+                    <a href="#how-it-works" class="btn btn--secondary btn--hero-secondary" aria-label="See how it works">
+                        <i data-lucide="play-circle" width="18" height="18"></i>
+                        <span>See how it works</span>
+                    </a>
+                </div>
+
+                <!-- Trust Strip -->
+                <div class="hero-trust-strip">
+                    <span class="hero-trust-item"><i data-lucide="building-2" width="13" height="13"></i> 23 IITs</span>
+                    <span class="hero-trust-dot">·</span>
+                    <span class="hero-trust-item"><i data-lucide="history" width="13" height="13"></i> 5 years of cutoffs</span>
+                    <span class="hero-trust-dot">·</span>
+                    <span class="hero-trust-item"><i data-lucide="sliders" width="13" height="13"></i> 8 criteria</span>
+                </div>
+
+                <!-- Mobile (<640px) Drifting Marquee Strips -->
+                <div class="hero-marquee-mobile" aria-hidden="true">
+                    <div class="mobile-marquee-row mobile-marquee-row--left" id="mobileRow1">
+                        <div class="mobile-card"><img src="/iits/iit-bombay.webp" alt="IIT Bombay" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Bombay</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-delhi.webp" alt="IIT Delhi" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Delhi</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-madras.webp" alt="IIT Madras" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Madras</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-kanpur.webp" alt="IIT Kanpur" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Kanpur</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-kharagpur.webp" alt="IIT Kharagpur" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Kharagpur</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-roorkee.webp" alt="IIT Roorkee" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Roorkee</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-bombay.webp" alt="IIT Bombay" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Bombay</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-delhi.webp" alt="IIT Delhi" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Delhi</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-madras.webp" alt="IIT Madras" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Madras</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-kanpur.webp" alt="IIT Kanpur" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Kanpur</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-kharagpur.webp" alt="IIT Kharagpur" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Kharagpur</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-roorkee.webp" alt="IIT Roorkee" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Roorkee</span></div></div>
+                    </div>
+                    <div class="mobile-marquee-row mobile-marquee-row--right" id="mobileRow2">
+                        <div class="mobile-card"><img src="/iits/iit-guwahati.webp" alt="IIT Guwahati" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Guwahati</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-hyderabad.webp" alt="IIT Hyderabad" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Hyderabad</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-bhu.webp" alt="IIT BHU" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT BHU</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-gandhinagar.webp" alt="IIT Gandhinagar" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Gandhinagar</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-jodhpur.webp" alt="IIT Jodhpur" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Jodhpur</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-indore.webp" alt="IIT Indore" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Indore</span></div></div>
+                        <!-- duplicated for loop -->
+                        <div class="mobile-card"><img src="/iits/iit-guwahati.webp" alt="IIT Guwahati" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Guwahati</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-hyderabad.webp" alt="IIT Hyderabad" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Hyderabad</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-bhu.webp" alt="IIT BHU" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT BHU</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-gandhinagar.webp" alt="IIT Gandhinagar" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Gandhinagar</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-jodhpur.webp" alt="IIT Jodhpur" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Jodhpur</span></div></div>
+                        <div class="mobile-card"><img src="/iits/iit-indore.webp" alt="IIT Indore" class="mobile-card__img"><div class="mobile-card__overlay"><span>IIT Indore</span></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Vertical Marquee (Scrolls UP, 90s) -->
+            <div class="campus-marquee campus-marquee--up hero-marquee-col" id="marqueeColRight" aria-hidden="true">
+                <div class="campus-marquee__track">
+                    <!-- Set 1 (6 distinct IITs) -->
+                    <!-- IIT Delhi -->
+                    <div class="campus-card campus-card--aspect-3-4">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-delhi.webp" alt="IIT Delhi campus" loading="eager" class="campus-card__img" onerror="handleCampusImgError(this, 'D', '#ef4444')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(239,68,68,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#ef4444;">D</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Delhi</span>
+                            <span class="campus-card__nirf-pill">NIRF #2</span>
+                        </div>
+                    </div>
+<!-- IIT Kanpur -->
+                    <div class="campus-card campus-card--aspect-4-5">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-kanpur.webp" alt="IIT Kanpur campus" loading="eager" class="campus-card__img" onerror="handleCampusImgError(this, 'K', '#10b981')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(16,185,129,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#10b981;">K</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Kanpur</span>
+                            <span class="campus-card__nirf-pill">NIRF #4</span>
+                        </div>
+                    </div>
+<!-- IIT Roorkee -->
+                    <div class="campus-card campus-card--aspect-3-4">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-roorkee.webp" alt="IIT Roorkee campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'R', '#06b6d4')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(6,182,212,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#06b6d4;">R</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Roorkee</span>
+                            <span class="campus-card__nirf-pill">NIRF #8</span>
+                        </div>
+                    </div>
+<!-- IIT Hyderabad -->
+                    <div class="campus-card campus-card--aspect-4-5">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-hyderabad.webp" alt="IIT Hyderabad campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'H', '#3F6212')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(63,98,18,0.20), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#3F6212;">H</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Hyderabad</span>
+                            <span class="campus-card__nirf-pill">NIRF #9</span>
+                        </div>
+                    </div>
+<!-- IIT Gandhinagar -->
+                    <div class="campus-card campus-card--aspect-3-4">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-gandhinagar.webp" alt="IIT Gandhinagar campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'Gn', '#14b8a6')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(20,184,166,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#14b8a6;">Gn</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Gandhinagar</span>
+                            <span class="campus-card__nirf-pill">NIRF #18</span>
+                        </div>
+                    </div>
+<!-- IIT Indore -->
+                    <div class="campus-card campus-card--aspect-4-5">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-indore.webp" alt="IIT Indore campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'I', '#a855f7')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(168,85,247,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#a855f7;">I</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Indore</span>
+                            <span class="campus-card__nirf-pill">NIRF #16</span>
+                        </div>
+                    </div>
+<!-- Duplicated Track for Seamless Loop -->
+                    <!-- IIT Delhi -->
+                    <div class="campus-card campus-card--aspect-3-4">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-delhi.webp" alt="IIT Delhi campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'D', '#ef4444')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(239,68,68,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#ef4444;">D</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Delhi</span>
+                            <span class="campus-card__nirf-pill">NIRF #2</span>
+                        </div>
+                    </div>
+<!-- IIT Kanpur -->
+                    <div class="campus-card campus-card--aspect-4-5">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-kanpur.webp" alt="IIT Kanpur campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'K', '#10b981')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(16,185,129,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#10b981;">K</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Kanpur</span>
+                            <span class="campus-card__nirf-pill">NIRF #4</span>
+                        </div>
+                    </div>
+<!-- IIT Roorkee -->
+                    <div class="campus-card campus-card--aspect-3-4">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-roorkee.webp" alt="IIT Roorkee campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'R', '#06b6d4')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(6,182,212,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#06b6d4;">R</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Roorkee</span>
+                            <span class="campus-card__nirf-pill">NIRF #8</span>
+                        </div>
+                    </div>
+<!-- IIT Hyderabad -->
+                    <div class="campus-card campus-card--aspect-4-5">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-hyderabad.webp" alt="IIT Hyderabad campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'H', '#3F6212')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(63,98,18,0.20), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#3F6212;">H</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Hyderabad</span>
+                            <span class="campus-card__nirf-pill">NIRF #9</span>
+                        </div>
+                    </div>
+<!-- IIT Gandhinagar -->
+                    <div class="campus-card campus-card--aspect-3-4">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-gandhinagar.webp" alt="IIT Gandhinagar campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'Gn', '#14b8a6')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(20,184,166,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#14b8a6;">Gn</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Gandhinagar</span>
+                            <span class="campus-card__nirf-pill">NIRF #18</span>
+                        </div>
+                    </div>
+<!-- IIT Indore -->
+                    <div class="campus-card campus-card--aspect-4-5">
+                        <div class="campus-card__img-wrap">
+                            <img src="/iits/iit-indore.webp" alt="IIT Indore campus" loading="lazy" class="campus-card__img" onerror="handleCampusImgError(this, 'I', '#a855f7')">
+                        </div>
+                        <div class="campus-card__fallback" style="display:none;background:radial-gradient(circle at 70% 30%, rgba(168,85,247,0.25), #090d16 80%);">
+                            <div class="campus-card__grid-pattern"></div>
+                            <div class="campus-card__monogram" style="color:#a855f7;">I</div>
+                        </div>
+                        <div class="campus-card__scrim"></div>
+                        <div class="campus-card__top-bar">
+                            <span class="campus-card__name-label">IIT Indore</span>
+                            <span class="campus-card__nirf-pill">NIRF #16</span>
+                        </div>
+                    </div>
+</div>
+            </div>
+
+                <!-- Marquee Pause/Play Control (icon-only, hero bottom-right) -->
+        <button class="hero-marquee-toggle" id="marqueeToggleBtn" onclick="toggleHeroMarquee()" aria-label="Pause marquee animation" aria-pressed="false">
+            <i data-lucide="pause" width="14" height="14" id="marqueeToggleIcon"></i>
+        </button>
+    </section>
+    <div class="container">
+
+        <!-- Stats strip -->
+        <div class="stats-strip" id="statsStrip">
+            <div class="stats-strip__item">
+                <div class="stats-strip__value" data-stat="iitsCovered" data-count="23">23</div>
+                <div class="stats-strip__label">IIT campuses</div>
+            </div>
+            <div class="stats-strip__item">
+                <div class="stats-strip__value" data-stat="academicPrograms" data-count="229">229</div>
+                <div class="stats-strip__label">Academic programs</div>
+            </div>
+            <div class="stats-strip__item">
+                <div class="stats-strip__value" data-stat="yearsCovered" data-count="5">5</div>
+                <div class="stats-strip__label">Years of cutoffs (2021–2025)</div>
+            </div>
+            <div class="stats-strip__item">
+                <div class="stats-strip__value" data-stat="decisionFactors" data-count="8">8</div>
+                <div class="stats-strip__label">Decision factors</div>
+            </div>
+        </div>
+
+        <!-- ─── HOW IT WORKS SECTION (#how-it-works) ─── -->
+        <section class="page-section how-it-works-section" id="how-it-works" style="scroll-margin-top:80px;">
+            <div class="section-header" style="text-align:center;">
+                <div class="section-label" style="justify-content:center;">
+                    <i data-lucide="play-circle" width="13" height="13"></i>
+                    <span>Product Tour</span>
+                </div>
+                <h2 class="section-title">See Rankly in <em>motion</em></h2>
+                <p class="section-body" style="margin:0 auto;max-width:58ch;">
+                    Interactive walkthrough: enter your rank, tune multi-factor weights, inspect cutoff bands, and export your personalized choice list.
+                </p>
+            </div>
+
+            <div class="tour-player-wrap">
+                <!-- Video Container (16:9) -->
+                <div class="tour-video-container" id="tourVideoContainer" tabindex="0" aria-label="Rankly walkthrough video player">
+                    <video id="tourVideo" class="tour-video" playsinline preload="auto">
+                        <source src="/tour/how-it-works.mp4" type="video/mp4">
+                        <source src="/tour/how-it-works.webm" type="video/webm">
+                        <track id="tourTrack" src="/tour/captions.vtt" kind="subtitles" srclang="en" label="English" default>
+                    </video>
+
+                    <!-- Big Centered Play Button -->
+                    <button class="tour-big-play" id="tourBigPlay" aria-label="Play tour video">
+                        <i data-lucide="play" width="32" height="32"></i>
+                    </button>
+
+                    <!-- Top Chapter Indicator Pill -->
+                    <div class="tour-chapter-badge" id="tourCurrentChapterBadge">
+                        <span class="tour-chapter-badge__dot"></span>
+                        <span id="tourCurrentChapterText">Chapter 1: Enter your rank</span>
+                    </div>
+
+                    <!-- Video Controls Overlay -->
+                    <div class="tour-controls" id="tourControls">
+                        <!-- Scrubber Bar -->
+                        <div class="tour-scrubber" id="tourScrubber" role="slider" aria-label="Seek time" aria-valuemin="0" aria-valuemax="43" aria-valuenow="0" tabindex="0">
+                            <div class="tour-scrubber-loaded" id="tourScrubberLoaded"></div>
+                            <div class="tour-scrubber-progress" id="tourScrubberProgress"></div>
+                            <div class="tour-chapter-markers" id="tourChapterMarkers"></div>
+                            <div class="tour-scrubber-thumb" id="tourScrubberThumb"></div>
+                            <div class="tour-scrubber-tooltip" id="tourScrubberTooltip">00:00</div>
+                        </div>
+
+                        <!-- Controls Row -->
+                        <div class="tour-controls-row">
+                            <!-- Left: Play/Pause, Mute, Time -->
+                            <div class="tour-controls-left">
+                                <button class="tour-ctrl-btn" id="tourPlayBtn" aria-label="Play" title="Play (Space / K)">
+                                    <i data-lucide="play" width="18" height="18" id="tourPlayIcon"></i>
+                                </button>
+                                <button class="tour-ctrl-btn" id="tourMuteBtn" aria-label="Mute" title="Mute (M)">
+                                    <i data-lucide="volume-2" width="18" height="18" id="tourMuteIcon"></i>
+                                </button>
+                                <div class="tour-time-display" id="tourTime">
+                                    <span class="tour-time-current" id="tourTimeCurrent">00:00</span>
+                                    <span class="tour-time-sep">/</span>
+                                    <span class="tour-time-duration" id="tourTimeDuration">01:15</span>
+                                </div>
+                            </div>
+
+                            <!-- Right: Chapter Menu, Captions, Speed, Fullscreen -->
+                            <div class="tour-controls-right">
+                                <div class="tour-menu-wrap">
+                                    <button class="tour-ctrl-btn tour-ctrl-btn--text" id="tourChaptersMenuBtn" aria-label="Jump to chapter" title="Chapters">
+                                        <i data-lucide="list-video" width="16" height="16"></i>
+                                        <span class="tour-btn-label">Chapters</span>
+                                    </button>
+                                    <div class="tour-chapters-dropdown" id="tourChaptersDropdown" style="display:none;">
+                                        <!-- populated dynamically -->
+                                    </div>
+                                </div>
+                                <button class="tour-ctrl-btn tour-ctrl-btn--toggle active" id="tourCcBtn" aria-label="Toggle subtitles" title="Subtitles (C)">
+                                    <span class="tour-cc-icon">CC</span>
+                                </button>
+                                <button class="tour-ctrl-btn tour-ctrl-btn--text" id="tourSpeedBtn" aria-label="Playback speed" title="Playback Speed">
+                                    <span id="tourSpeedLabel">1x</span>
+                                </button>
+                                <button class="tour-ctrl-btn" id="tourFullscreenBtn" aria-label="Toggle fullscreen" title="Fullscreen (F)">
+                                    <i data-lucide="maximize" width="18" height="18" id="tourFullscreenIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Horizontal Chapter Strip Below Video (5 Clickable Cards) -->
+                <div class="tour-chapter-strip" id="tourChaptersStrip" role="tablist" aria-label="Video chapters">
+                    <!-- Cards will be populated or hydrated dynamically from chapters.json -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── 1. EDITORIAL 7 PROBLEMS SECTION ─── -->
+        <section class="page-section editorial-problems" id="exploreSection">
+            <div class="editorial-problems__grid">
+                <div class="editorial-problems__left">
+                    <div class="section-label">The Problem</div>
+                    <h2 class="editorial-problems__headline">Counselling is broken.<br>Here are the <em>seven</em> traps.</h2>
+                    <p class="editorial-problems__desc">
+                        Most students pick their IIT on closing rank spreadsheets alone. Rankly layers 8 life-quality factors on top of real JoSAA data to eliminate costly mistakes.
+                    </p>
+                    <div style="margin-top:var(--space-6);">
+                        <button class="btn btn--primary" onclick="switchTab('find')">
+                            <i data-lucide="compass" width="16" height="16"></i>
+                            Find my true match
+                        </button>
+                    </div>
+                </div>
+                <div class="editorial-problems__list">
+                    <div class="editorial-problem-item">
+                        <span class="editorial-problem-item__num">01</span>
+                        <div class="editorial-problem-item__content">
+                            <h3 class="editorial-problem-item__title">Rank ≠ Happiness</h3>
+                            <p class="editorial-problem-item__body">A higher cutoff doesn't guarantee a better 4 years. Culture, location, mess quality, and annual fees shape your daily reality.</p>
+                        </div>
+                    </div>
+                    <div class="editorial-problem-item">
+                        <span class="editorial-problem-item__num">02</span>
+                        <div class="editorial-problem-item__content">
+                            <h3 class="editorial-problem-item__title">Cutoff Volatility</h3>
+                            <p class="editorial-problem-item__body">Cutoffs shift unpredictably year over year. Yesterday's safe choice can tighten. We track 5 years of final-round closing shifts (2021–2025) across OPEN, EWS, OBC, SC, and ST quotas.</p>
+                        </div>
+                    </div>
+                    <div class="editorial-problem-item">
+                        <span class="editorial-problem-item__num">03</span>
+                        <div class="editorial-problem-item__content">
+                            <h3 class="editorial-problem-item__title">Information Overload</h3>
+                            <p class="editorial-problem-item__body">23 IITs, 229 academic programs, and 12,947 closing cutoff data points. Thousands of pairs to parse manually while the JoSAA clock ticks down.</p>
+                        </div>
+                    </div>
+                    <div class="editorial-problem-item">
+                        <span class="editorial-problem-item__num">04</span>
+                        <div class="editorial-problem-item__content">
+                            <h3 class="editorial-problem-item__title">Zero Personalisation</h3>
+                            <p class="editorial-problem-item__body">Standard calculators treat every candidate the same. Rankly custom-weights your preferences—from tuition budget comfort to distance from home.</p>
+                        </div>
+                    </div>
+                    <div class="editorial-problem-item">
+                        <span class="editorial-problem-item__num">05</span>
+                        <div class="editorial-problem-item__content">
+                            <h3 class="editorial-problem-item__title">Opaque Black-Box Advice</h3>
+                            <p class="editorial-problem-item__body">Generic algorithms tell you where to apply without proof. Every fit score on Rankly has a transparent, 8-factor auditable breakdown.</p>
+                        </div>
+                    </div>
+                    <div class="editorial-problem-item">
+                        <span class="editorial-problem-item__num">06</span>
+                        <div class="editorial-problem-item__content">
+                            <h3 class="editorial-problem-item__title">Scattered Workflow</h3>
+                            <p class="editorial-problem-item__body">Juggling WhatsApp advice, 20 open browser tabs, and paper notes. Rankly gives you a centralized compare view, multi-factor scoring, and decision cockpit.</p>
+                        </div>
+                    </div>
+                    <div class="editorial-problem-item">
+                        <span class="editorial-problem-item__num">07</span>
+                        <div class="editorial-problem-item__content">
+                            <h3 class="editorial-problem-item__title">Choice Locking Panic</h3>
+                            <p class="editorial-problem-item__body">Submitting the final JoSAA order in a rush leads to irreversible mistakes. Rankly generates an ordered preference list with live Safe, Moderate, and Reach risk tiers.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── CHANCES SECTION SLOT (#chances) ─── -->
+        <!-- Placed before Data & Method per L2 section order spec -->
+
+        <!-- ─── DATA & METHOD SECTION (#data-method) ─── -->
+        <section class="page-section data-method-section" id="data-method" style="scroll-margin-top:80px;">
+            <div class="data-method-band">
+                <div class="data-method-left">
+                    <div class="section-label">
+                        <i data-lucide="database" width="13" height="13"></i>
+                        <span>Data &amp; Methodology</span>
+                    </div>
+                    <h2 class="section-title data-method-title">Real cutoffs.<br>Transparent models.</h2>
+                    <p class="section-body data-method-desc">
+                        Every recommendation is computed from final-round JoSAA closing ranks (2021–2025) across all 23 IITs, paired with normalized multi-factor preference scoring.
+                    </p>
+                    <div class="data-method-stats-grid">
+                        <div class="method-stat-box">
+                            <span class="method-stat-num" id="statCutoffRecords">12,947</span>
+                            <span class="method-stat-label">Cutoff Records (2021–2025)</span>
+                        </div>
+                        <div class="method-stat-box">
+                            <span class="method-stat-num" id="statIitsCovered">23</span>
+                            <span class="method-stat-label">IIT Campuses</span>
+                        </div>
+                        <div class="method-stat-box">
+                            <span class="method-stat-num" id="statProgramsCovered">229</span>
+                            <span class="method-stat-label">Academic Programs</span>
+                        </div>
+                        <div class="method-stat-box">
+                            <span class="method-stat-num" id="statFactors">8</span>
+                            <span class="method-stat-label">Decision Fit Factors</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-method-right">
+                    <div class="method-accordions">
+                        <details class="method-acc" open>
+                            <summary class="method-acc-summary">
+                                <span>What comes directly from JoSAA</span>
+                                <i data-lucide="chevron-down" class="acc-chevron" width="16" height="16"></i>
+                            </summary>
+                            <div class="method-acc-body">
+                                All opening and closing ranks (2021–2025) are extracted directly from official central JoSAA counselling datasets. We evaluate dual-pool seat matrices across Gender-Neutral and Female-Only supernumerary quotas for OPEN, EWS, OBC-NCL, SC, and ST categories.
+                            </div>
+                        </details>
+
+                        <details class="method-acc">
+                            <summary class="method-acc-summary">
+                                <span>What data is indicative</span>
+                                <i data-lucide="chevron-down" class="acc-chevron" width="16" height="16"></i>
+                            </summary>
+                            <div class="method-acc-body">
+                                Tuition fee slabs, average placement CTCs, and campus infrastructure ratings are compiled from public institutional submissions and campus disclosures as indicative baselines. 2026 cutoff projections are mathematical estimates, not guarantees.
+                            </div>
+                        </details>
+
+                        <details class="method-acc">
+                            <summary class="method-acc-summary">
+                                <span>How Safe, Moderate, Reach &amp; trends are computed</span>
+                                <i data-lucide="chevron-down" class="acc-chevron" width="16" height="16"></i>
+                            </summary>
+                            <div class="method-acc-body">
+                                Safe indicates historical closing rank well above candidate rank (&gt;90% likelihood). Moderate reflects cutoffs within striking range (~40–80%). Reach indicates aspirational options. Cutoff velocity uses Theil-Sen robust median slope analysis across 5 years to detect genuine demand shifts without noise distortion.
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cutoff table preview -->
+        <section class="page-section">
+            <div class="section-header">
+                <div class="section-label">Live Data</div>
+                <h2 class="section-title">Real cutoffs.<br>Real insights.</h2>
+                <p class="section-body">A snapshot of IIT closing ranks for CSE (OPEN · Gender-Neutral) from the final JoSAA 2025 round.</p>
+            </div>
+            <div class="preview-table-wrap">
+                <div class="preview-table-header">
+                    <div>
+                        <div style="font-family:var(--font-display);font-weight:600;">IIT CSE Closing Ranks — 2025</div>
+                        <div style="font-size:var(--text-xs);color:var(--muted);margin-top:2px;">OPEN · Gender-Neutral · Final Round</div>
+                    </div>
+                    <button class="btn btn--sm btn--secondary" onclick="switchTab('find')">
+                        <i data-lucide="compass" width="14" height="14"></i>
+                        Check my rank
+                    </button>
+                </div>
+                <div class="table-wrap" style="border:none;border-radius:0;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Institute</th>
+                                <th>Opening Rank</th>
+                                <th>Closing Rank</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="td-mono" style="color:var(--lime);">1</td>
+                                <td style="font-weight:500;">IIT Bombay</td>
+                                <td class="td-mono">1</td>
+                                <td class="td-mono">67</td>
+                                <td><span class="trend-badge rising"><i data-lucide="arrow-up-right" width="11" height="11"></i>Rising</span></td>
+                            </tr>
+                            <tr>
+                                <td class="td-mono" style="color:var(--lime);">2</td>
+                                <td style="font-weight:500;">IIT Delhi</td>
+                                <td class="td-mono">1</td>
+                                <td class="td-mono">118</td>
+                                <td><span class="trend-badge stable"><i data-lucide="minus" width="11" height="11"></i>Stable</span></td>
+                            </tr>
+                            <tr>
+                                <td class="td-mono" style="color:var(--lime);">3</td>
+                                <td style="font-weight:500;">IIT Madras</td>
+                                <td class="td-mono">56</td>
+                                <td class="td-mono">245</td>
+                                <td><span class="trend-badge falling"><i data-lucide="arrow-down-right" width="11" height="11"></i>Falling</span></td>
+                            </tr>
+                            <tr>
+                                <td class="td-mono" style="color:var(--lime);">4</td>
+                                <td style="font-weight:500;">IIT Kanpur</td>
+                                <td class="td-mono">85</td>
+                                <td class="td-mono">320</td>
+                                <td><span class="trend-badge stable"><i data-lucide="minus" width="11" height="11"></i>Stable</span></td>
+                            </tr>
+                            <tr>
+                                <td class="td-mono" style="color:var(--lime);">5</td>
+                                <td style="font-weight:500;">IIT Roorkee</td>
+                                <td class="td-mono">192</td>
+                                <td class="td-mono">574</td>
+                                <td><span class="trend-badge falling"><i data-lucide="arrow-down-right" width="11" height="11"></i>Falling</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- All 23 IITs & Branches Directory Section -->
+        <section class="page-section" id="chances" style="scroll-margin-top:80px;" data-section="iits-directory">
+            <div class="section-header">
+                <div class="section-label">All 23 IITs Directory</div>
+                <h2 class="section-title">Every IIT. Every Branch.<br>Real LPA &amp; Placement Insights.</h2>
+                <p class="section-body">Official placement packages, NIRF rankings, and all 229 branch programs across every Indian Institute of Technology from JoSAA &amp; NIRF database records.</p>
+            </div>
+
+            <!-- Controls bar -->
+            <div class="iit-dir-controls">
+                <div class="iit-dir-search-wrap">
+                    <i data-lucide="search" width="16" height="16" class="iit-dir-search-icon"></i>
+                    <input type="text" id="iitDirSearch" class="input input--search" placeholder="Search by IIT name, city or branch (e.g. Bombay, CSE, MnC, Delhi)..." oninput="handleIITDirSearch()">
+                </div>
+                <div class="iit-dir-filter-actions">
+                    <select id="iitDirSort" class="select select--sm" onchange="handleIITDirSort()" style="min-width:180px;">
+                        <option value="nirf">Sort: NIRF Rank</option>
+                        <option value="package">Sort: Highest Avg LPA</option>
+                        <option value="placement">Sort: Placement %</option>
+                        <option value="fee">Sort: Lowest Fees</option>
+                        <option value="name">Sort: College Name</option>
+                    </select>
+                    <div class="toolbar-view-mode" role="group" aria-label="View toggle">
+                        <button type="button" class="active" id="iitDirViewCards" onclick="setIITDirView('cards')" title="Cards View">
+                            <i data-lucide="layout-grid" width="15" height="15"></i>
+                        </button>
+                        <button type="button" id="iitDirViewTable" onclick="setIITDirView('table')" title="Table View">
+                            <i data-lucide="list" width="15" height="15"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Branch Quick Filter Tags -->
+            <div class="iit-dir-tags" id="iitDirBranchTags">
+                <button type="button" class="iit-tag-pill active" onclick="filterIITByBranchTag('')">All Branches</button>
+                <button type="button" class="iit-tag-pill" onclick="filterIITByBranchTag('CSE')">CSE</button>
+                <button type="button" class="iit-tag-pill" onclick="filterIITByBranchTag('ECE')">ECE / EE</button>
+                <button type="button" class="iit-tag-pill" onclick="filterIITByBranchTag('MnC')">MnC &amp; AI</button>
+                <button type="button" class="iit-tag-pill" onclick="filterIITByBranchTag('ME')">Mechanical</button>
+                <button type="button" class="iit-tag-pill" onclick="filterIITByBranchTag('CE')">Civil</button>
+                <button type="button" class="iit-tag-pill" onclick="filterIITByBranchTag('CH')">Chemical</button>
+                <button type="button" class="iit-tag-pill" onclick="filterIITByBranchTag('AE')">Aerospace</button>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="iit-dir-summary">
+                <span id="iitDirCount" style="font-weight:600;color:var(--text);">Showing 23 of 23 IITs</span>
+                <span class="iit-dir-summary__divider">·</span>
+                <span class="iit-dir-summary__highlight" style="color:var(--lime);font-weight:600;">Top CTC: ₹32.5 LPA (IIT Bombay)</span>
+                <span class="iit-dir-summary__divider">·</span>
+                <span style="color:var(--muted);">229 Branch Offerings</span>
+            </div>
+
+            <!-- Cards Container -->
+            <div class="iit-dir-grid" id="iitDirCardsContainer">
+                <div class="iit-dir-loading" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--muted);">
+                    <span class="pulse-dot"></span> Loading all 23 IITs and branches...
+                </div>
+            </div>
+
+            <!-- Table Container (Hidden by default) -->
+            <div class="preview-table-wrap" id="iitDirTableContainer" style="display:none;margin-top:var(--space-4);">
+                <div class="table-wrap" style="border:none;border-radius:0;">
+                    <table id="iitDirTable">
+                        <thead>
+                            <tr>
+                                <th>NIRF</th>
+                                <th>Institute</th>
+                                <th>Avg Package (LPA)</th>
+                                <th>Placement %</th>
+                                <th>Annual Fee</th>
+                                <th>Offered Branches</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="iitDirTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── PRE-FOOTER CTA SECTION (#ctaSection) ─── -->
+        
+        <!-- ─── NATIONAL COLLEGE EXPLORER & REGIONAL DISCOVERY ─── -->
+        <section class="page-section" id="collegeExplorerSection" style="margin-top:var(--space-8); margin-bottom:var(--space-8);">
+            <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <div class="section-label">
+                        <span>🏛️ All India College Directory</span>
+                    </div>
+                    <h2 class="section-title" style="margin-top:6px; margin-bottom:4px;">
+                        Explore Institutes of National Importance
+                    </h2>
+                    <p class="section-body" style="max-width:65ch;">
+                        Search across all 23 IITs, premier NITs, IIITs, and IISc. Filter from North-East to North-West with live autosuggest.
+                    </p>
+                </div>
+                <div id="collegeResultsCount" style="font-size:13px; font-weight:600; color:#38bdf8; background:rgba(56,189,248,0.1); padding:6px 12px; border-radius:6px; border:1px solid rgba(56,189,248,0.25);">
+                    Loading colleges...
+                </div>
+            </div>
+
+            <!-- College Search & Filter Bar -->
+            <div style="background:#0e1529; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:20px; margin-bottom:24px;">
+                <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                    <div id="collegeSearchWrapper" style="flex:2; min-width:260px; position:relative;">
+                        <input type="text" id="collegeSearchInput" class="auth-input" placeholder="Search by college name, city (e.g. Bombay, Delhi, Kurukshetra)..." style="padding-left:14px;" autocomplete="off">
+                    </div>
+                    <div style="flex:1; min-width:180px;">
+                        <select id="collegeRegionFilter" class="admin-select" style="width:100%; height:42px;">
+                            <option value="">All Regions</option>
+                            <option value="2">North-East Region</option>
+                            <option value="1">North Region</option>
+                            <option value="3">North-West Region</option>
+                            <option value="4">East Region</option>
+                            <option value="5">West Region</option>
+                            <option value="6">South Region</option>
+                            <option value="7">Central Region</option>
+                        </select>
+                    </div>
+                    <div style="flex:1; min-width:180px;">
+                        <select id="collegeTypeFilter" class="admin-select" style="width:100%; height:42px;">
+                            <option value="">All Institute Types</option>
+                            <option value="1">IIT (Indian Institute of Technology)</option>
+                            <option value="2">NIT (National Institute of Technology)</option>
+                            <option value="3">IIIT (Information Technology)</option>
+                            <option value="4">IISc Bangalore</option>
+                            <option value="5">IISER</option>
+                            <option value="6">AIIMS</option>
+                        </select>
+                    </div>
+                    <button id="collegeSearchBtn" class="auth-btn auth-btn--signup" style="height:42px; padding:0 22px;">
+                        Search
+                    </button>
+                </div>
+
+                <!-- Recent search chips -->
+                <div id="recentSearchChipsContainer" class="recent-chips-container"></div>
+            </div>
+
+            <!-- Results Grid -->
+            <div id="collegeResultsGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:18px;">
+                <!-- Populated dynamically via search-personalization.js -->
+            </div>
+
+            <!-- Pagination -->
+            <div id="collegePagination" class="admin-pagination" style="margin-top:24px;"></div>
+        </section>
+
+        <section class="page-section cta-section" id="ctaSection">
+            <div class="cta-inner-card">
+                <div class="section-label" style="justify-content:center;margin-bottom:var(--space-3);">
+                    <i data-lucide="sparkles" width="13" height="13"></i>
+                    <span>Quick Admissions Analysis</span>
+                </div>
+                <h2 class="section-title cta-title" style="margin-bottom:var(--space-3);text-align:center;">
+                    Type your rank. See your seats.
+                </h2>
+                <p class="section-body" style="margin:0 auto var(--space-6);max-width:54ch;text-align:center;">
+                    Safe, Moderate and Reach options across all 23 IITs, with the cutoff maths shown.
+                </p>
+
+                <!-- Command Bar Input Container (Matches Hero Styling) -->
+                <div class="cta-cmd-bar" role="region" aria-label="Bottom rank predictor bar">
+                    <span class="hero-cmd-hash" aria-hidden="true">#</span>
+                    <input type="number" id="ctaRankInput" class="hero-cmd-input" min="1" max="200000" onkeydown="if(event.key==='Enter')startFindWithCtaRank()" placeholder="Enter rank..." aria-label="Enter your JEE Advanced rank">
+                    <button class="hero-cmd-btn" onclick="startFindWithCtaRank()" aria-label="Find my IIT">
+                        <i data-lucide="search" width="16" height="16"></i>
+                        <span>Find my IIT</span>
+                        <i data-lucide="arrow-right" width="16" height="16"></i>
+                    </button>
+                </div>
+
+                <div class="cta-trust-items">
+                    <span class="cta-trust-item"><i data-lucide="check-circle" width="13" height="13"></i> 23 IITs</span>
+                    <span class="cta-trust-dot">·</span>
+                    <span class="cta-trust-item"><i data-lucide="history" width="13" height="13"></i> 5 years of cutoffs</span>
+                    <span class="cta-trust-dot">·</span>
+                    <span class="cta-trust-item"><i data-lucide="shield-check" width="13" height="13"></i> No sign-up</span>
+                </div>
+            </div>
+        </section>
+    </div>
+</div><!-- /tab-home -->
+
+
+<!-- ═══════════════════════════════════════════════════
+     TAB: FIND MY IIT (Unified Flow — Steps 1-3)
+     ═══════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-find">
+    <div class="container" style="padding-top:var(--space-4);padding-bottom:var(--space-16);">
+
+        <!-- Compact Inline Stepper -->
+        <nav class="journey-stepper" aria-label="Counselling journey steps">
+            <div class="stepper-item step-1 active" id="stepperStep1" onclick="handleStepperClick(1)">
+                <div class="stepper-circle">1</div>
+                <span class="stepper-label">Profile</span>
+            </div>
+            <div class="stepper-connector" id="stepperTrack1"></div>
+            <div class="stepper-item step-2 future" id="stepperStep2" onclick="handleStepperClick(2)">
+                <div class="stepper-circle">2</div>
+                <span class="stepper-label">Priorities</span>
+            </div>
+            <div class="stepper-connector" id="stepperTrack2"></div>
+            <div class="stepper-item step-3 future" id="stepperStep3" onclick="handleStepperClick(3)">
+                <div class="stepper-circle">3</div>
+                <span class="stepper-label">Matches</span>
+            </div>
+        </nav>
+
+        <!-- Designated Inner Scroll Pane for App Shell -->
+        <div class="app-scroll-pane" id="findScrollPane">
+
+        <!-- ─── STEP 1: TELL US ABOUT YOU ─── -->
+        <div class="find-card-pro" id="findStep1Container">
+            <div class="find-card-header">
+                <div class="find-card-eyebrow">STEP 1 OF 3</div>
+                <h1 class="find-card-title">Tell us about you</h1>
+                <p class="find-card-subtitle">Your rank and preferences. We rank matching IITs instantly.</p>
+
+                <!-- J3: Entry Mode Segmented Control -->
+                <div class="seg seg--lg" role="group" aria-label="Input mode" style="margin-top:16px;max-width:380px;height:42px;padding:4px;gap:6px;border-radius:12px;display:grid;grid-template-columns:1fr 1fr;">
+                    <button type="button" class="active" id="findModeManualBtn" onclick="setFindMode('manual')" style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600;border-radius:9px;">
+                        <i data-lucide="edit-3" width="15" height="15"></i> Enter manually
+                    </button>
+                    <button type="button" id="findModeUploadBtn" onclick="setFindMode('upload')" style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600;border-radius:9px;">
+                        <i data-lucide="scan-line" width="15" height="15"></i> Upload scorecard
+                    </button>
+                </div>
+            </div>
+
+            <!-- Upload Scorecard Pane (J3) -->
+            <div id="findUploadPane" style="display:none;padding:20px 24px;">
+                <div class="scorecard-dropzone" id="scorecardDropzone" onclick="document.getElementById('scorecardFileInput').click()" ondragover="handleScorecardDragOver(event)" ondragleave="handleScorecardDragLeave(event)" ondrop="handleScorecardDrop(event)" style="border:2px dashed var(--border-strong, #3b82f6);border-radius:14px;padding:36px 20px;text-align:center;cursor:pointer;background:var(--raised);transition:all 0.2s;">
+                    <input type="file" id="scorecardFileInput" accept="image/*" style="display:none;" onchange="if(this.files[0])processScorecardFile(this.files[0])">
+                    <div style="width:48px;height:48px;border-radius:12px;background:var(--accent-tint, rgba(43,80,232,0.1));display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--primary, #2b50e8);">
+                        <i data-lucide="file-text" width="24" height="24"></i>
+                    </div>
+                    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;">
+                        Drop JEE Advanced Scorecard, or <span style="color:var(--primary);text-decoration:underline;">browse</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
+                        PNG, JPG, WEBP up to 10MB · Camera captures supported
+                    </div>
+                    <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);background:var(--surface);padding:4px 10px;border-radius:20px;border:1px solid var(--border);">
+                        <i data-lucide="shield-check" width="12" height="12" style="color:var(--safe);"></i>
+                        Client-side processing only: your image is parsed in your browser and never uploaded.
+                    </div>
+                </div>
+
+                <!-- Scanning Progress -->
+                <div id="scorecardProgressWrap" style="display:none;margin-top:20px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:12px;">
+                        <span id="scorecardProgressText" style="font-weight:600;color:var(--text);">Initializing OCR engine…</span>
+                        <span id="scorecardProgressPct" style="font-family:var(--font-mono);color:var(--muted);">0%</span>
+                    </div>
+                    <div style="height:6px;background:var(--raised);border-radius:3px;overflow:hidden;border:1px solid var(--border);">
+                        <div id="scorecardProgressBar" style="height:100%;width:0%;background:var(--primary);transition:width 0.2s;"></div>
+                    </div>
+                </div>
+
+                <!-- Parsed Confirmation Card -->
+                <div id="scorecardConfirmCard" style="display:none;margin-top:20px;padding:18px;background:var(--raised);border:1px solid var(--border);border-radius:12px;">
+                    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                        <i data-lucide="check-circle" width="16" height="16" style="color:var(--safe);"></i>
+                        Scorecard Parsed Successfully
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px;">
+                        <div>
+                            <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:4px;display:block;">CRL Rank</label>
+                            <input type="number" id="ocrRankInput" class="form-input" style="font-weight:700;font-family:var(--font-mono);width:100%;padding:6px 10px;border-radius:6px;">
+                        </div>
+                        <div>
+                            <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:4px;display:block;">Category</label>
+                            <select id="ocrCatSelect" class="form-input" style="width:100%;padding:6px 10px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--text);">
+                                <option value="OPEN">OPEN</option>
+                                <option value="EWS">GEN-EWS</option>
+                                <option value="OBC-NCL">OBC-NCL</option>
+                                <option value="SC">SC</option>
+                                <option value="ST">ST</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:4px;display:block;">Gender Pool</label>
+                            <select id="ocrGenderSelect" class="form-input" style="width:100%;padding:6px 10px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--text);">
+                                <option value="Male">Gender-Neutral</option>
+                                <option value="Female">Female-Only</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;">
+                        <button type="button" class="btn btn--primary btn--sm" onclick="confirmScorecardAndFind()" style="flex:1;justify-content:center;font-weight:600;">
+                            Confirm &amp; See Seats ⚡
+                        </button>
+                        <button type="button" class="btn btn--secondary btn--sm" onclick="retryScorecardUpload()">
+                            Scan another
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Entry Body -->
+            <div class="find-card-body" id="findManualBody">
+                <!-- Row 1: Rank Field + Home City Field (Equal Height 52px + 16px helper rows) -->
+                <div class="find-card-row-2col">
+                    <div class="field">
+                        <label class="field__label" for="rankInput">
+                            <span>JEE Advanced CRL rank<span class="req">*</span></span>
+                            <span class="pill pill--brand" id="optionsPill" style="display:none;height:20px;padding:0 8px;font-size:11px;">
+                                <span id="optionsCount">--</span> options
+                            </span>
+                        </label>
+                        <div class="input">
+                            <input
+                                type="number"
+                                id="rankInput"
+                                placeholder="e.g. 1842"
+                                min="1"
+                                max="250000"
+                                inputmode="numeric"
+                                oninput="onRankInputChange(this.value)"
+                                aria-label="JEE Advanced CRL rank"
+                            >
+                            <span class="input-trailing-text">AIR</span>
+                        </div>
+                        <div class="field__help">Common Rank List, 1 to 2,50,000</div>
+                    </div>
+
+                    <div class="field">
+                        <label class="field__label" for="homeCityInput">
+                            <span>Home city</span>
+                        </label>
+                        <div class="input" style="position:relative;">
+                            <i data-lucide="map-pin" width="18" height="18" style="color:var(--ink-400);flex-shrink:0;"></i>
+                            <input
+                                type="text"
+                                id="homeCityInput"
+                                placeholder="e.g. Kota, Patna, Pune, Delhi..."
+                                autocomplete="off"
+                            >
+                            <button type="button" id="clearHomeCityBtn" onclick="clearHomeCity()" style="display:none;border:none;background:transparent;cursor:pointer;color:var(--ink-400);width:28px;height:28px;border-radius:50%;display:grid;place-items:center;" aria-label="Clear city">
+                                <i data-lucide="x" width="14" height="14"></i>
+                            </button>
+                            <ul id="homeCityDropdown" class="city-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:60;max-height:220px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-lg);padding:4px 0;list-style:none;"></ul>
+                        </div>
+                        <div class="field__help" id="homeCityBadge">Kota, Rajasthan · used for the near-home score</div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Category Quota + Gender Pool (Segmented Controls) -->
+                <div class="find-card-row-2col">
+                    <div class="field">
+                        <label class="field__label">Category</label>
+                        <div class="seg" role="group" aria-label="Category selection" style="--n:5;">
+                            <button type="button" class="active" data-cat="OPEN" onclick="selectCategory(this)">OPEN</button>
+                            <button type="button" data-cat="EWS" onclick="selectCategory(this)">EWS</button>
+                            <button type="button" data-cat="OBC-NCL" onclick="selectCategory(this)">OBC-NCL</button>
+                            <button type="button" data-cat="SC" onclick="selectCategory(this)">SC</button>
+                            <button type="button" data-cat="ST" onclick="selectCategory(this)">ST</button>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="field__label">Gender pool</label>
+                        <div class="seg" role="group" aria-label="Gender selection" style="--n:2;">
+                            <button type="button" class="active" data-gender="Male" onclick="selectGender(this)">Gender-neutral</button>
+                            <button type="button" data-gender="Female" onclick="selectGender(this)">Female-only</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Branches Chips + Strict Filter Switch -->
+                <div class="field">
+                    <div class="field__label">
+                        <span>Branches</span>
+                        <label class="switch-control">
+                            <span class="switch-label">Strict filter</span>
+                            <input type="checkbox" id="strictBranchToggle" checked>
+                            <span class="switch-track"><span class="switch-knob"></span></span>
+                        </label>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;" id="branchFilterChips">
+                        <button type="button" class="chip active" data-branch="ALL" onclick="selectBranchChip(this)">All</button>
+                        <button type="button" class="chip" data-branch="CSE" onclick="selectBranchChip(this)">CSE</button>
+                        <button type="button" class="chip" data-branch="ECE" onclick="selectBranchChip(this)">ECE</button>
+                        <button type="button" class="chip" data-branch="EE" onclick="selectBranchChip(this)">EE</button>
+                        <button type="button" class="chip" data-branch="ME" onclick="selectBranchChip(this)">Mechanical</button>
+                        <button type="button" class="chip" data-branch="CE" onclick="selectBranchChip(this)">Civil</button>
+                        <button type="button" class="chip" data-branch="CH" onclick="selectBranchChip(this)">Chemical</button>
+                        <button type="button" class="chip" data-branch="MME" onclick="selectBranchChip(this)">Metallurgy</button>
+                        <button type="button" class="chip" data-branch="AI" onclick="selectBranchChip(this)">AI / Data</button>
+                    </div>
+                </div>
+
+                <!-- Row 5: Action Buttons (Continue & Skip Priorities) -->
+                <div>
+                    <div style="display:flex;gap:12px;align-items:center;">
+                        <button type="button" class="btn btn--primary" onclick="goToStep2()" style="height:52px;flex:1;font-size:16px;">
+                            <span>Continue to Priorities</span>
+                            <i data-lucide="arrow-right" width="18" height="18"></i>
+                        </button>
+                        <button type="button" class="btn btn--secondary" onclick="skipPreferencesAndSubmit()" style="height:52px;padding:0 18px;font-size:14px;white-space:nowrap;" title="Skip priorities step and use balanced factor weights">
+                            <span>Skip priorities ⚡</span>
+                        </button>
+                    </div>
+                    <div style="text-align:center;font-size:12px;color:var(--ink-400);margin-top:10px;">
+                        No sign-up needed · 23 IITs · 5 years of cutoffs
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ─── STEP 2: WHAT MATTERS TO YOU ─── -->
+        <div id="findStep2Container" style="display:none;width:100%;">
+            <div style="margin-bottom:8px;">
+                <h1 style="font-size:30px;line-height:36px;font-weight:700;letter-spacing:-0.02em;color:var(--ink-900);margin:0 0 4px 0;">What matters to you</h1>
+                <p style="font-size:13px;line-height:18px;color:var(--ink-500);margin:0;">Drag to set importance. Percentages update live.</p>
+            </div>
+
+            <div class="prio-layout">
+                <!-- LEFT COLUMN: Prompt Bar + Presets + 8 Equal Factor Cards + Sticky Action Bar -->
+                <div>
+                    <!-- (a) How Match Score Works -->
+                    <div class="scoring-formula-card" style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 18px; margin-bottom:var(--space-4);">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                            <div class="icon-tile branch" style="width:26px; height:26px;"><i data-lucide="sliders" width="14" height="14"></i></div>
+                            <span style="font-weight:700; font-size:13px; letter-spacing:0.01em;">How Your Match Score Works</span>
+                        </div>
+                        <p style="font-size:12.5px; color:var(--muted); margin:0; line-height:1.5;">
+                            Every college and branch is scored across 8 key areas — like placements, fees, campus, and distance. The higher you set a factor's importance, the more impact it has on your final recommendation rank. Use the sliders below or select a quick preset.
+                        </p>
+                    </div>
+
+                    <!-- (b) Presets -->
+                    <div class="presets-row chips-row">
+                        <span style="font-size:13px;font-weight:600;color:var(--ink-400);margin-right:4px;">Presets:</span>
+                        <button type="button" class="chip" onclick="applyPresetWeights('Placement Hunter')">Placement Hunter</button>
+                        <button type="button" class="chip" onclick="applyPresetWeights('Budget Saver')">Budget Saver</button>
+                        <button type="button" class="chip" onclick="applyPresetWeights('Near Home')">Near Home</button>
+                        <button type="button" class="chip" onclick="applyPresetWeights('Campus Life Lover')">Campus Life Lover</button>
+                        <button type="button" class="chip active" onclick="applyPresetWeights('Balanced')">Balanced</button>
+                    </div>
+
+                    <!-- (c) 8 Equal Factor Cards (2x4 Grid, 104px height) -->
+                    <div class="factors-grid">
+                        <!-- 1. Placement -->
+                        <article class="factor-card" style="--c:var(--c-placement);--p:90%;" id="row_placement">
+                            <header class="factor__head">
+                                <span class="factor__icon"><i data-lucide="briefcase"></i></span>
+                                <div class="factor__text">
+                                    <h3>Placement</h3>
+                                    <p>Average CTC and top offers</p>
+                                </div>
+                                <button type="button" class="factor__lock" id="lock_placement" onclick="toggleCriterionLock('placement')" aria-pressed="false" aria-label="Lock Placement weight">
+                                    <i data-lucide="unlock" width="14" height="14"></i>
+                                </button>
+                            </header>
+                            <div class="factor__control">
+                                <input class="slider" type="range" min="0" max="100" value="90" id="slider_placement" oninput="onCriterionSliderChange('placement', this.value)" style="--c:var(--c-placement);">
+                                <span id="val_placement" style="display:none;">90</span>
+                                <output class="factor__share" id="share_placement">20%</output>
+                            </div>
+                        </article>
+
+                        <!-- 2. Branch -->
+                        <article class="factor-card" style="--c:var(--c-branch);--p:85%;" id="row_branch">
+                            <header class="factor__head">
+                                <span class="factor__icon"><i data-lucide="cpu"></i></span>
+                                <div class="factor__text">
+                                    <h3>Branch</h3>
+                                    <p>Labs, faculty, facilities</p>
+                                </div>
+                                <button type="button" class="factor__lock" id="lock_branch" onclick="toggleCriterionLock('branch')" aria-pressed="false" aria-label="Lock Branch weight">
+                                    <i data-lucide="unlock" width="14" height="14"></i>
+                                </button>
+                            </header>
+                            <div class="factor__control">
+                                <input class="slider" type="range" min="0" max="100" value="85" id="slider_branch" oninput="onCriterionSliderChange('branch', this.value)" style="--c:var(--c-branch);">
+                                <span id="val_branch" style="display:none;">85</span>
+                                <output class="factor__share" id="share_branch">19%</output>
+                            </div>
+                        </article>
+
+                        <!-- 3. Fees -->
+                        <article class="factor-card" style="--c:var(--c-fees);--p:55%;" id="row_fees">
+                            <header class="factor__head">
+                                <span class="factor__icon"><i data-lucide="indian-rupee"></i></span>
+                                <div class="factor__text">
+                                    <h3>Fees</h3>
+                                    <p>Tuition and ROI</p>
+                                </div>
+                                <button type="button" class="factor__lock" id="lock_fees" onclick="toggleCriterionLock('fees')" aria-pressed="false" aria-label="Lock Fees weight">
+                                    <i data-lucide="unlock" width="14" height="14"></i>
+                                </button>
+                            </header>
+                            <div class="factor__control">
+                                <input class="slider" type="range" min="0" max="100" value="55" id="slider_fees" oninput="onCriterionSliderChange('fees', this.value)" style="--c:var(--c-fees);">
+                                <span id="val_fees" style="display:none;">55</span>
+                                <output class="factor__share" id="share_fees">12%</output>
+                            </div>
+                        </article>
+
+                        <!-- 4. Location -->
+                        <article class="factor-card" style="--c:var(--c-location);--p:60%;" id="row_location">
+                            <header class="factor__head">
+                                <span class="factor__icon"><i data-lucide="map-pin"></i></span>
+                                <div class="factor__text">
+                                    <h3>Location</h3>
+                                    <p>Metro access, city life</p>
+                                </div>
+                                <button type="button" class="factor__lock" id="lock_location" onclick="toggleCriterionLock('location')" aria-pressed="false" aria-label="Lock Location weight">
+                                    <i data-lucide="unlock" width="14" height="14"></i>
+                                </button>
+                            </header>
+                            <div class="factor__control">
+                                <input class="slider" type="range" min="0" max="100" value="60" id="slider_location" oninput="onCriterionSliderChange('location', this.value)" style="--c:var(--c-location);">
+                                <span id="val_location" style="display:none;">60</span>
+                                <output class="factor__share" id="share_location">13%</output>
+                            </div>
+                        </article>
+
+                        <!-- 5. Hostel -->
+                        <article class="factor-card" style="--c:var(--c-hostel);--p:50%;" id="row_hostel">
+                            <header class="factor__head">
+                                <span class="factor__icon"><i data-lucide="bed-double"></i></span>
+                                <div class="factor__text">
+                                    <h3>Hostel</h3>
+                                    <p>Rooms, Wi-Fi, occupancy</p>
+                                </div>
+                                <button type="button" class="factor__lock" id="lock_hostel" onclick="toggleCriterionLock('hostel')" aria-pressed="false" aria-label="Lock Hostel weight">
+                                    <i data-lucide="unlock" width="14" height="14"></i>
+                                </button>
+                            </header>
+                            <div class="factor__control">
+                                <input class="slider" type="range" min="0" max="100" value="50" id="slider_hostel" oninput="onCriterionSliderChange('hostel', this.value)" style="--c:var(--c-hostel);">
+                                <span id="val_hostel" style="display:none;">50</span>
+                                <output class="factor__share" id="share_hostel">11%</output>
+                            </div>
+                        </article>
+
+                        <!-- 6. Food -->
+                        <article class="factor-card" style="--c:var(--c-mess);--p:45%;" id="row_mess">
+                            <header class="factor__head">
+                                <span class="factor__icon"><i data-lucide="utensils"></i></span>
+                                <div class="factor__text">
+                                    <h3>Food</h3>
+                                    <p>Mess quality, diet options</p>
+                                </div>
+                                <button type="button" class="factor__lock" id="lock_mess" onclick="toggleCriterionLock('mess')" aria-pressed="false" aria-label="Lock Food weight">
+                                    <i data-lucide="unlock" width="14" height="14"></i>
+                                </button>
+                            </header>
+                            <div class="factor__control">
+                                <input class="slider" type="range" min="0" max="100" value="45" id="slider_mess" oninput="onCriterionSliderChange('mess', this.value)" style="--c:var(--c-mess);">
+                                <span id="val_mess" style="display:none;">45</span>
+                                <output class="factor__share" id="share_mess">10%</output>
+                            </div>
+                        </article>
+
+                        <!-- 7. Campus -->
+                        <article class="factor-card" style="--c:var(--c-campus);--p:40%;" id="row_campus">
+                            <header class="factor__head">
+                                <span class="factor__icon"><i data-lucide="party-popper"></i></span>
+                                <div class="factor__text">
+                                    <h3>Campus</h3>
+                                    <p>Fests, clubs, culture</p>
+                                </div>
+                                <button type="button" class="factor__lock" id="lock_campus" onclick="toggleCriterionLock('campus')" aria-pressed="false" aria-label="Lock Campus weight">
+                                    <i data-lucide="unlock" width="14" height="14"></i>
+                                </button>
+                            </header>
+                            <div class="factor__control">
+                                <input class="slider" type="range" min="0" max="100" value="40" id="slider_campus" oninput="onCriterionSliderChange('campus', this.value)" style="--c:var(--c-campus);">
+                                <span id="val_campus" style="display:none;">40</span>
+                                <output class="factor__share" id="share_campus">9%</output>
+                            </div>
+                        </article>
+
+                        <!-- 8. Near home -->
+                        <article class="factor-card" style="--c:var(--c-home);--p:25%;" id="row_home">
+                            <header class="factor__head">
+                                <span class="factor__icon"><i data-lucide="house"></i></span>
+                                <div class="factor__text">
+                                    <h3>Near home</h3>
+                                    <p>Distance to home state</p>
+                                </div>
+                                <button type="button" class="factor__lock" id="lock_home" onclick="toggleCriterionLock('home')" aria-pressed="false" aria-label="Lock Near home weight">
+                                    <i data-lucide="unlock" width="14" height="14"></i>
+                                </button>
+                            </header>
+                            <div class="factor__control">
+                                <input class="slider" type="range" min="0" max="100" value="25" id="slider_home" oninput="onCriterionSliderChange('home', this.value)" style="--c:var(--c-home);">
+                                <span id="val_home" style="display:none;">25</span>
+                                <output class="factor__share" id="share_home">6%</output>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- (d) Sticky Action Bar (Both buttons exactly 52px high) -->
+                    <div class="prio-action-bar">
+                        <button type="button" class="btn btn--ghost" onclick="goToStep1()" style="width:120px;height:52px;">
+                            <i data-lucide="arrow-left" width="16" height="16"></i>
+                            Back
+                        </button>
+                        <button type="button" class="btn btn--primary" id="btnGoToStep3" onclick="goToStep3()" style="flex:1;height:52px;font-size:15px;">
+                            <span>Preview matches</span>
+                            <i data-lucide="arrow-right" width="16" height="16"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: Sticky Summary Card with SVG Donut & Aligned 8-Row Legend -->
+                <div class="prio-aside">
+                    <div class="summary-card">
+                        <div class="summary-head">
+                            <span class="summary-eyebrow">YOUR PRIORITY MIX</span>
+                            <button type="button" class="summary-reset-btn" onclick="resetWeights()">Reset</button>
+                        </div>
+
+                        <!-- 220x220 Donut -->
+                        <div class="donut-wrap">
+                            <svg width="200" height="200" viewBox="0 0 200 200" id="step2DonutSvg">
+                                <circle cx="100" cy="100" r="75" fill="none" stroke="var(--line)" stroke-width="22"/>
+                            </svg>
+                            <div class="donut-center-info">
+                                <div class="donut-center-eyebrow">TOP PRIORITY</div>
+                                <div class="donut-center-name" id="donutTopPriorityName">Placement</div>
+                                <div class="donut-center-share" id="donutTopPriorityPct">20%</div>
+                            </div>
+                        </div>
+
+                        <!-- 8-Row Aligned Legend -->
+                        <div id="donutLegendContainer" class="summary-legend"></div>
+
+                        <!-- Auto summary sentence -->
+                        <div class="summary-sentence" id="donutSummarySentence">
+                            Placement-led profile with balanced everything else.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── STEP 3: YOUR MATCHES (PREVIEW) ─── -->
+        <div class="find-step" id="findStep3MatchesContainer" style="display:none;width:min(900px, 100%);margin:0 auto;">
+            <div class="find-card-pro" style="padding:32px 40px;">
+                <div class="find-card-header" style="margin-bottom:24px;">
+                    <div class="step3-eyebrow-badge">
+                        <span class="step3-pulse-dot"></span>
+                        <span>STEP 3 OF 3 · CANDIDATE PREVIEW</span>
+                    </div>
+                    <h1 class="find-card-title" style="font-size:32px;font-weight:800;letter-spacing:-0.025em;margin:8px 0 6px 0;">Your candidate matches</h1>
+                    <p class="find-card-subtitle" style="font-size:14.5px;color:var(--muted);line-height:1.5;">Preliminary fit previews calculated from official JoSAA cutoff thresholds and your multi-factor priorities.</p>
+                </div>
+
+                <!-- Eligible Count Pill Banner -->
+                <div class="step3-eligible-banner">
+                    <div style="display:flex;align-items:center;gap:14px;">
+                        <div class="step3-banner-icon">
+                            <i data-lucide="sparkles" width="20" height="20"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:16px;font-weight:700;color:var(--ink-900);" id="step3EligibleCountText">
+                                <span id="step3EligibleCount" class="eligible-count-num">--</span> eligible IIT programs for your rank
+                            </div>
+                            <div style="font-size:12px;color:var(--ink-500);margin-top:2px;">Evaluated across 23 IITs · 5-year JoSAA closing cutoff shifts</div>
+                        </div>
+                    </div>
+                    <span class="pill pill--safe" style="font-weight:600;padding:6px 12px;">
+                        <i data-lucide="shield-check" width="13" height="13"></i> JoSAA Certified Models
+                    </span>
+                </div>
+
+                <!-- Top 5 Candidate Previews Header & List -->
+                <div style="margin-bottom:28px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+                        <span>Top 5 Candidate Matches</span>
+                        <span style="font-size:12px;color:var(--muted);text-transform:none;letter-spacing:normal;font-weight:500;">Ranked by your priority weights</span>
+                    </div>
+                    <div id="step3MatchesList" style="display:flex;flex-direction:column;gap:12px;">
+                        <div class="skeleton" style="height:76px;border-radius:14px;"></div>
+                        <div class="skeleton" style="height:76px;border-radius:14px;"></div>
+                        <div class="skeleton" style="height:76px;border-radius:14px;"></div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons (Both 52px high) -->
+                <div style="display:flex;gap:16px;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border);">
+                    <button type="button" class="btn btn--ghost" onclick="goToStep2()" style="height:52px;padding:0 24px;border-radius:12px;">
+                        <i data-lucide="arrow-left" width="16" height="16"></i> Back to adjust
+                    </button>
+                    <button type="button" class="btn btn--primary" id="step3SeeAllMatchesBtn" onclick="startStep3Pipeline()" style="height:52px;flex:1;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:12px;font-weight:700;">
+                        <span>Show my IITs</span>
+                        <i data-lucide="arrow-right" width="18" height="18"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dev Debug Panel (behind ?debug=1) -->
+            <div id="step3DebugPanel" style="display:none;margin-top:var(--space-6);padding:var(--space-4);background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:12px;font-family:var(--font-mono);font-size:11px;">
+                <div style="color:var(--lime);font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;">
+                    <span>⚡ DEV DEBUG: Step 3 Preview Payload &amp; Results</span>
+                    <span id="step3DebugStatus" style="color:var(--muted);"></span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <div style="color:var(--muted);margin-bottom:4px;font-weight:600;">EXACT PAYLOAD SENT:</div>
+                        <pre id="step3DebugPayload" style="background:var(--card);padding:8px;border-radius:6px;overflow-x:auto;max-height:220px;color:var(--text);"></pre>
+                    </div>
+                    <div>
+                        <div style="color:var(--muted);margin-bottom:4px;font-weight:600;">RESPONSE TOP MATCHES:</div>
+                        <pre id="step3DebugResponse" style="background:var(--card);padding:8px;border-radius:6px;overflow-x:auto;max-height:220px;color:var(--text);"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── STEP 3: ANIMATED BUFFERING & LOADING EXPERIENCE ─── -->
+        <div id="findStep3PipelineContainer" style="display:none;width:100%;">
+            <div class="card modern-loader-card" style="max-width:560px;margin:36px auto;padding:48px 36px;text-align:center;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:24px;background:var(--surface);box-shadow:0 24px 60px rgba(0,0,0,0.4);">
+                <!-- Animated Pulse Radar Ring -->
+                <div class="loader-pulse-container" style="position:relative;width:84px;height:84px;margin:0 auto 24px;">
+                    <div class="loader-pulse-ring loader-pulse-ring-1"></div>
+                    <div class="loader-pulse-ring loader-pulse-ring-2"></div>
+                    <div class="loader-pulse-core" style="width:56px;height:56px;position:absolute;inset:14px;background:var(--raised);border:1px solid var(--border-strong);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--lime);box-shadow:0 0 24px rgba(200,245,96,0.25);">
+                        <i data-lucide="compass" width="28" height="28" class="spin-compass"></i>
+                    </div>
+                </div>
+
+                <div class="engine-live-badge" style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:rgba(200,245,96,0.1);border:1px solid rgba(200,245,96,0.25);color:var(--lime);font-size:11px;font-weight:700;letter-spacing:0.06em;margin-bottom:12px;">
+                    <span class="engine-live-dot" style="width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 6px var(--lime);"></span>
+                    MATCHING ENGINE ACTIVE
+                </div>
+                <h2 class="step-title" style="font-size:24px;margin-bottom:8px;font-family:var(--font-display);font-weight:700;letter-spacing:-0.02em;">Synthesizing Your Optimal IIT Allocation</h2>
+                <p class="step-subtitle" id="loaderDynamicStatus" style="font-size:14px;color:var(--muted);margin-bottom:28px;">Evaluating 23 campuses against multi-factor constraints…</p>
+
+                <!-- Modern Slim Progress Bar -->
+                <div style="height:6px;width:100%;max-width:380px;margin:0 auto 28px;background:var(--raised);border-radius:999px;overflow:hidden;border:1px solid var(--border);position:relative;">
+                    <div id="loaderProgressBar" style="height:100%;width:25%;background:linear-gradient(90deg, #2563EB, #C8F560);border-radius:999px;transition:width 450ms cubic-bezier(0.4, 0, 0.2, 1);box-shadow:0 0 10px rgba(200,245,96,0.5);"></div>
+                </div>
+
+                <!-- Minimalist Progress Steps -->
+                <div class="loader-steps-row" style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+                    <div class="loader-step-pill active" id="pipeStep1">
+                        <span class="step-pill-dot"></span>
+                        <span>1. Filtering Cutoffs</span>
+                    </div>
+                    <div class="loader-step-pill" id="pipeStep2">
+                        <span class="step-pill-dot"></span>
+                        <span>2. Scoring Priorities</span>
+                    </div>
+                    <div class="loader-step-pill" id="pipeStep3">
+                        <span class="step-pill-dot"></span>
+                        <span>3. Assembling Results</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+            </div>
+        </div>
+
+        </div><!-- /findScrollPane -->
+    </div>
+</div><!-- /tab-find -->
+
+<!-- ═══════════════════════════════════════════════════
+     TAB: RESULTS (Hero Screen)
+     ═══════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-results">
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-16);">
+
+        <!-- Page Header -->
+        <div class="results-header-row">
+            <div>
+                <h1 style="font-size:32px;line-height:40px;font-weight:700;letter-spacing:-0.02em;color:var(--ink-900);margin:0 0 6px 0;">Your matches</h1>
+                <div style="font-size:14px;line-height:20px;color:var(--ink-500);" id="resultsSubtitle">Programs ranked for your personal profile &amp; official cutoffs.</div>
+            </div>
+            <button type="button" class="btn btn--ghost btn--sm" onclick="goToStep1()" style="gap:6px;">
+                <i data-lucide="sliders-horizontal" width="14" height="14"></i>
+                Edit profile
+            </button>
+        </div>
+
+        <!-- Dismissible Quick-Start Banner -->
+        <div id="quickStartBannerWrap" style="margin-bottom:var(--space-4);"></div>
+
+        <!-- 1. Top Summary Strip: 5 compact tiles -->
+        <div class="stats-summary-row" id="resultStats">
+            <div class="stat-box">
+                <div class="stat-box__value" id="statTotalMatches">--</div>
+                <div class="stat-box__label">Total matches</div>
+            </div>
+            <div class="stat-box" onclick="filterByRiskPill('Safe', this)">
+                <div class="stat-box__value" style="color:var(--safe);" id="statSafe">--</div>
+                <div class="stat-box__label"><span class="pill-dot" style="background:var(--safe);"></span>Safe · ≤0.85x closing</div>
+            </div>
+            <div class="stat-box" onclick="filterByRiskPill('Moderate', this)">
+                <div class="stat-box__value" style="color:var(--mod);" id="statModerate">--</div>
+                <div class="stat-box__label"><span class="pill-dot" style="background:var(--mod);"></span>Moderate · 0.85–1.10x</div>
+            </div>
+            <div class="stat-box" onclick="filterByRiskPill('Reach', this)">
+                <div class="stat-box__value" style="color:var(--reach);" id="statReach">--</div>
+                <div class="stat-box__label"><span class="pill-dot" style="background:var(--reach);"></span>Reach · &gt;1.10x closing</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-box__value" style="color:var(--primary);" id="statTopMatch">--</div>
+                <div class="stat-box__label" id="statTopMatchName" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Top match</div>
+            </div>
+        </div>
+
+        <!-- 2. Workspace: Inner Scroll Pane for App Shell -->
+        <div class="app-scroll-pane" id="resultsScrollPane">
+        <div class="results-workspace full-width" style="display:block;width:100%;">
+            <!-- Single-Row Aligned Toolbar (40px Controls) -->
+            <div class="results-toolbar-row" id="resultsFilterBar">
+                <div class="toolbar-left">
+                    <div class="seg seg--risk" role="group" aria-label="Filter risk" style="height:38px;--n:4;">
+                        <button type="button" class="active" data-risk="ALL" onclick="filterByRiskPill('ALL', this)">All</button>
+                        <button type="button" data-risk="Safe" onclick="filterByRiskPill('Safe', this)"><span class="risk-dot safe"></span>Safe</button>
+                        <button type="button" data-risk="Moderate" onclick="filterByRiskPill('Moderate', this)"><span class="risk-dot mod"></span>Moderate</button>
+                        <button type="button" data-risk="Reach" onclick="filterByRiskPill('Reach', this)"><span class="risk-dot reach"></span>Reach</button>
+                    </div>
+
+                    <div class="toolbar-select-wrap">
+                        <select class="toolbar-select" id="trendFilterSelect" onchange="filterByTrendPill(this.value, this)">
+                            <option value="ALL">Trend: All</option>
+                            <option value="Rising">↗ Rising</option>
+                            <option value="Falling">↘ Falling</option>
+                            <option value="Stable">— Stable</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="toolbar-right">
+                    <div class="toolbar-search-wrap">
+                        <i data-lucide="search" width="15" height="15" class="toolbar-search-icon"></i>
+                        <input
+                            type="text"
+                            placeholder="Search IIT or branch…"
+                            id="resultsSearchInput"
+                            class="toolbar-search"
+                            oninput="onResultsSearch(this.value)"
+                        >
+                    </div>
+
+                    <div class="toolbar-select-wrap">
+                        <select class="toolbar-select" id="resultsSortSelect" onchange="sortCardsBy(this.value)">
+                            <option value="match_pct">Sort: Best match</option>
+                            <option value="closing_rank">Sort: Cutoff rank</option>
+                            <option value="avg_package_lpa">Sort: Avg CTC</option>
+                            <option value="nirf_rank">Sort: NIRF rank</option>
+                        </select>
+                    </div>
+
+                    <div class="toolbar-pill-box" title="Spread results across different IITs">
+                        <label class="switch-control">
+                            <span class="switch-label">Diversify</span>
+                            <input type="checkbox" id="diversifyToggleBtn" checked onchange="toggleDiversifyResults(this)">
+                            <span class="switch-track"><span class="switch-knob"></span></span>
+                        </label>
+                    </div>
+
+                    <div class="toolbar-view-mode">
+                        <button type="button" id="viewGridBtn" class="active" onclick="toggleResultViewMode('grid')" title="Grid view">
+                            <i data-lucide="layout-grid" width="16" height="16"></i>
+                        </button>
+                        <button type="button" id="viewListBtn" onclick="toggleResultViewMode('table')" title="List view">
+                            <i data-lucide="list" width="16" height="16"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Cards Grid: 3 columns at laptop, 4 at wide, 2 at tablet, 1 on phone -->
+            <div class="cards results-grid" id="resultsGrid">
+                <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+                    <div class="empty-state__icon" style="margin: 0 auto 12px;"><i data-lucide="compass" width="28" height="28"></i></div>
+                    <div class="empty-state__title" style="font-size:18px;font-weight:700;margin-bottom:4px;">No recommendations generated yet</div>
+                    <div class="empty-state__body" style="color:var(--ink-500);font-size:13px;margin-bottom:16px;">Run our 3-step recommendation flow in "Find my IIT" to populate your matches.</div>
+                    <button class="btn btn--primary" onclick="switchTab('find')">
+                        <i data-lucide="compass" width="16" height="16"></i> Find my IIT
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Table View (Alternative) -->
+            <div class="table-wrap" id="resultsTableView" style="display:none;margin-top:var(--space-4);">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>IIT &amp; Branch</th>
+                            <th>Fit Score</th>
+                            <th>Risk Assessment</th>
+                            <th>2025 Cutoff</th>
+                            <th>Avg CTC</th>
+                            <th>Trend</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        </div><!-- /resultsScrollPane -->
+    </div>
+</div><!-- /tab-results -->
+
+
+
+
+
+<!-- ═══════════════════════════════════════════════════
+     TAB: TRENDS
+     ═══════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-trends">
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-16);">
+        <!-- Sleek Cockpit Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:36px;height:36px;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--primary);border:1px solid var(--line);">
+                    <i data-lucide="trending-up" width="20" height="20"></i>
+                </div>
+                <div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <h1 style="font-size:22px;font-weight:700;color:var(--ink-900);margin:0;letter-spacing:-0.02em;">Branch Cutoff Trends</h1>
+                        <span class="session-tag" id="trendsCategoryTag" style="font-size:11px;padding:3px 8px;">2021–2025 Cutoffs</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Branch Trends Layout: Top Filter Toolbar + Full-Width Main Pane -->
+        <div class="trends-layout">
+            <!-- Top Toolbar: Full-Width Horizontal Filter Bar -->
+            <div class="trends-top-bar" aria-label="Trends filter toolbar">
+                <!-- Search -->
+                <div>
+                    <label class="trends-filter-label"><i data-lucide="search" width="12" height="12"></i> Search</label>
+                    <input type="text" id="trendSearchInput" class="form-input" placeholder="Search IIT or branch…" oninput="onTrendSearchInput(this.value)" style="width:100%;font-size:12.5px;padding:7px 10px;">
+                </div>
+
+                <!-- Category Segmented Control -->
+                <div>
+                    <label class="trends-filter-label"><i data-lucide="tag" width="12" height="12"></i> Reservation Quota</label>
+                    <div class="seg seg--sm" id="trendCategorySeg" role="group" aria-label="Category" style="width:100%;display:grid;grid-template-columns:repeat(5,1fr);height:32px;">
+                        <button type="button" class="active" onclick="setTrendCategory('OPEN', this)">OPEN</button>
+                        <button type="button" onclick="setTrendCategory('EWS', this)">EWS</button>
+                        <button type="button" onclick="setTrendCategory('OBC-NCL', this)">OBC</button>
+                        <button type="button" onclick="setTrendCategory('SC', this)">SC</button>
+                        <button type="button" onclick="setTrendCategory('ST', this)">ST</button>
+                    </div>
+                </div>
+
+                <!-- Seat Pool -->
+                <div>
+                    <label class="trends-filter-label"><i data-lucide="users" width="12" height="12"></i> Seat Pool</label>
+                    <div class="seg seg--sm" id="trendPoolSeg" role="group" aria-label="Seat Pool" style="width:100%;display:grid;grid-template-columns:1fr 1fr;height:32px;">
+                        <button type="button" class="active" id="trendPoolNeutralBtn" onclick="setTrendPool('Gender-Neutral')">Gender-Neutral</button>
+                        <button type="button" id="trendPoolFemaleBtn" onclick="setTrendPool('Female-Only')">Female-Only</button>
+                    </div>
+                </div>
+
+                <!-- Program Type -->
+                <div>
+                    <label class="trends-filter-label"><i data-lucide="layers" width="12" height="12"></i> Program Type</label>
+                    <select id="trendProgramTypeSelect" onchange="onTrendProgramTypeChange(this.value)" style="width:100%;padding:6px 10px;font-size:12.5px;border-radius:6px;background:var(--raised);border:1px solid var(--border);color:var(--text);">
+                        <option value="4-year B.Tech">4-year B.Tech</option>
+                        <option value="5-year B.Tech+M.Tech">5-year B.Tech + M.Tech</option>
+                        <option value="4-year BS">4-year BS</option>
+                    </select>
+                </div>
+
+                <!-- IIT Select -->
+                <div>
+                    <label class="trends-filter-label"><i data-lucide="building" width="12" height="12"></i> IIT Campus</label>
+                    <select id="trendIitSelect" onchange="onTrendIitSelectChange(this.value)" style="width:100%;padding:6px 10px;font-size:12.5px;border-radius:6px;background:var(--raised);border:1px solid var(--border);color:var(--text);">
+                        <option value="ALL">All 23 IITs</option>
+                    </select>
+                </div>
+
+                <!-- Branch Select -->
+                <div>
+                    <label class="trends-filter-label"><i data-lucide="git-branch" width="12" height="12"></i> Branch Discipline</label>
+                    <select id="trendBranchSelect" onchange="onTrendBranchSelectChange(this.value)" style="width:100%;padding:6px 10px;font-size:12.5px;border-radius:6px;background:var(--raised);border:1px solid var(--border);color:var(--text);">
+                        <option value="ALL">All Branches</option>
+                    </select>
+                </div>
+
+                <!-- Trend Status Chips -->
+                <div>
+                    <label class="trends-filter-label"><i data-lucide="trending-up" width="12" height="12"></i> Trajectory Status</label>
+                    <div class="chips-row" style="margin:0;gap:5px;">
+                        <button class="chip active" data-status="ALL" onclick="setTrendStatusChip('ALL', this)">All</button>
+                        <button class="chip" data-status="Rising" onclick="setTrendStatusChip('Rising', this)">↗ Rising</button>
+                        <button class="chip" data-status="Falling" onclick="setTrendStatusChip('Falling', this)">↘ Falling</button>
+                    </div>
+                </div>
+
+                <!-- Confidence Chips -->
+                <div>
+                    <label class="trends-filter-label"><i data-lucide="shield" width="12" height="12"></i> Confidence</label>
+                    <div class="chips-row" style="margin:0;gap:5px;">
+                        <button class="chip active" data-conf="ALL" onclick="setTrendConfidenceChip('ALL', this)">All</button>
+                        <button class="chip" data-conf="High" onclick="setTrendConfidenceChip('High', this)">High</button>
+                        <button class="chip" data-conf="Medium" onclick="setTrendConfidenceChip('Medium', this)">Medium</button>
+                        <button class="chip" data-conf="Low" onclick="setTrendConfidenceChip('Low', this)">Low</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Trends Region with Sub-Tabs (Full Width) -->
+            <div class="trends-main" style="width:100%;">
+                <!-- Sub-Tabs Bar -->
+                <div class="trends-subtabs" role="tablist">
+                    <button class="trends-subtab-btn active" id="trendSubtabOverview" onclick="switchTrendSubtab('overview')">
+                        <i data-lucide="layout-grid" width="15" height="15"></i> Overview &amp; Movers
+                    </button>
+                    <button class="trends-subtab-btn" id="trendSubtabHeatmap" onclick="switchTrendSubtab('heatmap')">
+                        <i data-lucide="grid" width="15" height="15"></i> Trajectory Heatmap
+                    </button>
+                    <button class="trends-subtab-btn" id="trendSubtabExplorer" onclick="switchTrendSubtab('explorer')">
+                        <i data-lucide="table" width="15" height="15"></i> Explorer Table
+                    </button>
+                </div>
+
+                <!-- PANE 1: OVERVIEW -->
+                <div id="trendPaneOverview" class="trend-subpane active">
+                    <!-- KPI Strip: 5 Metric Cards -->
+                    <div class="stat-grid" id="trendKpiGrid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));margin-bottom:var(--space-5);">
+                        <div class="stat-card">
+                            <div class="stat-label"><i data-lucide="arrow-up-right" width="14" height="14" style="color:var(--reach);"></i>Rising Demand</div>
+                            <div class="stat-value reach" id="trendKpiTightening">--</div>
+                            <div class="stat-sub">Cutoff rank tightened (harder)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label"><i data-lucide="arrow-down-right" width="14" height="14" style="color:var(--safe);"></i>Easing Cutoffs</div>
+                            <div class="stat-value safe" id="trendKpiLoosening">--</div>
+                            <div class="stat-sub">Cutoff rank relaxed (easier)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label"><i data-lucide="minus" width="14" height="14" style="color:var(--muted);"></i>Stable Cutoffs</div>
+                            <div class="stat-value" id="trendKpiStable" style="color:var(--muted);">--</div>
+                            <div class="stat-sub">Within ±2% over 1 year</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label"><i data-lucide="flame" width="14" height="14" style="color:var(--lime);"></i>Hottest Branch</div>
+                            <div class="stat-value" id="trendKpiHottest" style="color:var(--lime);font-size:var(--text-lg);">--</div>
+                            <div class="stat-sub" id="trendKpiHottestName">--</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label"><i data-lucide="trending-down" width="14" height="14" style="color:var(--safe);"></i>Biggest Opening</div>
+                            <div class="stat-value safe" id="trendKpiBiggestOpening" style="font-size:var(--text-lg);">--</div>
+                            <div class="stat-sub" id="trendKpiBiggestOpeningName">--</div>
+                        </div>
+                    </div>
+
+                    <!-- Movers Section: 2-Column Grid -->
+                    <div class="movers-grid">
+                        <!-- Left: Getting Harder (Top 5 Tightening) -->
+                        <div class="mover-column-card tightening">
+                            <div class="mover-column-title">
+                                <span style="display:flex;align-items:center;gap:6px;">
+                                    <i data-lucide="arrow-up-right" width="16" height="16" style="color:var(--reach);"></i>
+                                    Getting Harder (Top 5 Tightening)
+                                </span>
+                                <span style="font-size:11px;font-family:var(--font-mono);color:var(--reach);">Higher Demand</span>
+                            </div>
+                            <div id="moversTighteningList" style="display:flex;flex-direction:column;gap:8px;">
+                                <div class="skeleton" style="height:52px;"></div>
+                                <div class="skeleton" style="height:52px;"></div>
+                                <div class="skeleton" style="height:52px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Getting Easier (Top 5 Relaxing) -->
+                        <div class="mover-column-card loosening">
+                            <div class="mover-column-title">
+                                <span style="display:flex;align-items:center;gap:6px;">
+                                    <i data-lucide="arrow-down-right" width="16" height="16" style="color:var(--safe);"></i>
+                                    Getting Easier (Top 5 Relaxing)
+                                </span>
+                                <span style="font-size:11px;font-family:var(--font-mono);color:var(--safe);">Easier Access</span>
+                            </div>
+                            <div id="moversLooseningList" style="display:flex;flex-direction:column;gap:8px;">
+                                <div class="skeleton" style="height:52px;"></div>
+                                <div class="skeleton" style="height:52px;"></div>
+                                <div class="skeleton" style="height:52px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- /trendPaneOverview -->
+
+                <!-- PANE 2: HEATMAP -->
+                <div id="trendPaneHeatmap" class="trend-subpane" style="display:none;">
+                    <div class="heatmap-card">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);flex-wrap:wrap;gap:var(--space-2);">
+                            <div>
+                                <h3 style="font-family:var(--font-display);font-size:var(--text-base);font-weight:700;display:flex;align-items:center;gap:6px;">
+                                    <i data-lucide="grid" width="16" height="16" style="color:var(--lime);"></i>
+                                    All 23 IITs Cutoff Trajectory Heatmap
+                                </h3>
+                                <p style="font-size:var(--text-xs);color:var(--muted);margin-top:2px;">
+                                    Branches × All 23 IITs. Annual trend velocity with diverging scale clipped at ±30%. Click any cell to inspect predictive corridor.
+                                </p>
+                            </div>
+                            <!-- Legend -->
+                            <div style="display:flex;align-items:center;gap:var(--space-3);font-size:11px;font-family:var(--font-mono);">
+                                <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(251,113,133,0.3);border:1px solid var(--reach);"></span> ↗ Tighter (&lt;-5%)</span>
+                                <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--raised);border:1px solid var(--border);"></span> — Stable (±5%)</span>
+                                <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(52,211,153,0.3);border:1px solid var(--safe);"></span> ↘ Easier (&gt;+5%)</span>
+                            </div>
+                        </div>
+                        <div class="heatmap-scroll" id="trendsHeatmapWrap" style="overflow-x:auto;max-height:600px;">
+                            <div style="text-align:center;padding:40px;color:var(--muted);">Loading trajectory heatmap…</div>
+                        </div>
+                    </div>
+                </div><!-- /trendPaneHeatmap -->
+
+                <!-- PANE 3: EXPLORER -->
+                <div id="trendPaneExplorer" class="trend-subpane" style="display:none;">
+                    <div class="card" style="padding:var(--space-5);">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);flex-wrap:wrap;gap:var(--space-3);">
+                            <div>
+                                <h3 style="font-family:var(--font-display);font-size:var(--text-base);font-weight:700;">Cutoff Explorer Table</h3>
+                                <p style="font-size:var(--text-xs);color:var(--muted);">Full historical 5-year closing ranks, trend velocity, confidence, and predictive corridors.</p>
+                            </div>
+                        </div>
+
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Institute &amp; Program</th>
+                                        <th>Quota</th>
+                                        <th>2025 Cutoff</th>
+                                        <th>2024 Cutoff</th>
+                                        <th>1Y Shift</th>
+                                        <th>2Y Shift</th>
+                                        <th>Annual Trend</th>
+                                        <th>5-Year Sparkline</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trendsTableBody">
+                                    <tr><td colspan="9" style="text-align:center;padding:var(--space-8);color:var(--muted);">Loading cutoff records…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div><!-- /trendPaneExplorer -->
+            </div><!-- /trends-main -->
+        </div><!-- /trends-layout -->
+    </div>
+</div><!-- /tab-trends -->
+
+
+<!-- ═══════════════════════════════════════════════════
+     TAB: PEERS
+     ═══════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-peer">
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
+        <div class="page-header" style="margin-bottom:var(--space-5);">
+            <div>
+                <div class="page-title" style="display:flex;align-items:center;gap:var(--space-3);">
+                    <span>Students Like You</span>
+                    <span class="session-tag" id="peerActiveRangeTag">AIR 1,000 – 3,000</span>
+                </div>
+                <div class="page-subtitle">Anonymised decisions from 1,200+ past candidates who navigated similar rank-cutoff tradeoffs in JoSAA.</div>
+            </div>
+            <button class="btn btn--secondary btn--sm" onclick="loadPeerTrends()">
+                <i data-lucide="refresh-cw" width="14" height="14"></i>
+                Refresh Data
+            </button>
+        </div>
+
+        <!-- Peer Insight KPI Strip -->
+        <div class="peer-kpi-grid">
+            <div class="stat-tile">
+                <div class="stat-label">Peer Decisions Tracked</div>
+                <div class="stat-value" id="peerStatTotalCount" style="color:var(--lime);">1,240</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-label">Top Choice Institute</div>
+                <div class="stat-value" id="peerStatTopInst" style="font-size:var(--text-lg);font-weight:600;">IIT Bombay</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-label">Most Picked Branch</div>
+                <div class="stat-value" id="peerStatTopBranch" style="font-size:var(--text-lg);font-weight:600;color:var(--branch-color);">CSE / MnC</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-label">Branch vs College Tradeoff</div>
+                <div class="stat-value" id="peerStatTradeoff" style="color:var(--safe);">68% Branch Priority</div>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="filter-bar" style="margin-bottom:var(--space-6);flex-wrap:wrap;gap:var(--space-3);">
+            <div style="display:flex;align-items:center;gap:var(--space-2);">
+                <label style="font-size:var(--text-xs);color:var(--muted);white-space:nowrap;margin:0;">Rank Range:</label>
+                <input type="number" id="peerRankMin" placeholder="500" value="500" style="width:85px;padding:6px 8px;font-size:var(--text-xs);font-family:var(--font-mono);" aria-label="Minimum rank">
+                <span style="color:var(--faint);">–</span>
+                <input type="number" id="peerRankMax" placeholder="2500" value="2500" style="width:85px;padding:6px 8px;font-size:var(--text-xs);font-family:var(--font-mono);" aria-label="Maximum rank">
+            </div>
+
+            <div style="display:flex;align-items:center;gap:var(--space-2);">
+                <label style="font-size:var(--text-xs);color:var(--muted);white-space:nowrap;margin:0;">Category:</label>
+                <select id="peerCategoryFilter" style="width:auto;padding:6px 24px 6px 8px;font-size:var(--text-xs);" aria-label="Category filter">
+                    <option value="ALL">All Categories</option>
+                    <option value="OPEN" selected>OPEN</option>
+                    <option value="OBC-NCL">OBC-NCL</option>
+                    <option value="EWS">EWS</option>
+                    <option value="SC">SC</option>
+                    <option value="ST">ST</option>
+                </select>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:var(--space-2);">
+                <label style="font-size:var(--text-xs);color:var(--muted);white-space:nowrap;margin:0;">IIT:</label>
+                <select id="peerInstituteFilter" style="width:auto;padding:6px 24px 6px 8px;font-size:var(--text-xs);" aria-label="Institute filter">
+                    <option value="">All 23 IITs</option>
+                </select>
+            </div>
+
+            <button class="btn btn--primary btn--sm" onclick="applyPeerFilters()" style="margin-left:auto;">
+                <i data-lucide="filter" width="14" height="14"></i>
+                Filter Decisions
+            </button>
+        </div>
+
+        <!-- Decision Cards Grid -->
+        <div class="peer-card-grid" id="peerCardsGrid">
+            <div style="grid-column:1/-1;text-align:center;padding:var(--space-8);color:var(--muted);">
+                <div class="loading-spinner" style="margin:0 auto var(--space-3);"></div>
+                Loading anonymised candidate decision records…
+            </div>
+        </div>
+
+        <!-- Detailed Peer Decisions Table -->
+        <div style="margin-top:var(--space-8);">
+            <div style="font-family:var(--font-display);font-weight:600;font-size:var(--text-lg);margin-bottom:var(--space-3);">
+                Complete JoSAA Candidate Allocation Records
+            </div>
+            <div id="peerTableWrap" class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Peer ID</th>
+                            <th>Category</th>
+                            <th>AIR Interval</th>
+                            <th>Allocated Institute</th>
+                            <th>Branch Program</th>
+                            <th>Selection Count</th>
+                            <th>Tradeoff Rationale</th>
+                        </tr>
+                    </thead>
+                    <tbody id="peerTableBody">
+                        <tr><td colspan="7" style="text-align:center;padding:var(--space-8);color:var(--muted);">Loading peer data…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div><!-- /tab-peer -->
+
+
+<!-- ═══════════════════════════════════════════════════
+     TAB: COMPARE
+     ═══════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-compare">
+    <div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-12);">
+        <div class="page-header" style="margin-bottom:var(--space-5);">
+            <div>
+                <h1 class="page-title" style="margin:0;font-size:30px;font-weight:700;">Compare Options</h1>
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--space-2);">
+                <button class="btn btn--secondary btn--sm" onclick="populateDefaultFinalists()">
+                    <i data-lucide="sparkles" width="14" height="14"></i>
+                    Load Top Choices
+                </button>
+                <button class="btn btn--ghost btn--sm" onclick="clearFinalists()" style="color:var(--muted);">
+                    <i data-lucide="x" width="14" height="14"></i>
+                    Clear
+                </button>
+            </div>
+        </div>
+
+        <!-- Designated Inner Scroll Pane for App Shell -->
+        <div class="app-scroll-pane" id="compareScrollPane">
+
+        <!-- Finalists 3-Column Grid -->
+        <div class="compare-grid-3col" id="compareFinalists">
+            <div style="grid-column:1/-1;text-align:center;padding:var(--space-8);color:var(--muted);">
+                <div class="loading-spinner" style="margin:0 auto var(--space-3);"></div>
+                Loading comparison finalists…
+            </div>
+        </div>
+
+        <!-- Side-by-Side Radar Overlay -->
+        <div class="panel" id="radarWrap" style="margin-top:var(--space-6);padding:var(--space-6);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);flex-wrap:wrap;gap:var(--space-3);">
+                <div>
+                    <div style="font-family:var(--font-display);font-weight:600;font-size:var(--text-lg);color:var(--text);">
+                        Multi-Factor Decision Radar Overlay
+                    </div>
+                    <div style="font-size:var(--text-xs);color:var(--muted);margin-top:2px;">
+                        Higher vertex indicates superior performance on that specific criterion.
+                    </div>
+                </div>
+                <!-- Radar Legend -->
+                <div style="display:flex;align-items:center;gap:var(--space-4);" id="compareRadarLegend">
+                    <div style="display:flex;align-items:center;gap:6px;font-size:var(--text-xs);font-family:var(--font-mono);color:var(--lime);">
+                        <span style="width:10px;height:10px;border-radius:2px;background:var(--lime);display:inline-block;"></span>
+                        <span id="legendSlot1">Finalist #1</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;font-size:var(--text-xs);font-family:var(--font-mono);color:#38bdf8;">
+                        <span style="width:10px;height:10px;border-radius:2px;background:#38bdf8;display:inline-block;"></span>
+                        <span id="legendSlot2">Finalist #2</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;font-size:var(--text-xs);font-family:var(--font-mono);color:#a78bfa;">
+                        <span style="width:10px;height:10px;border-radius:2px;background:#a78bfa;display:inline-block;"></span>
+                        <span id="legendSlot3">Finalist #3</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex;justify-content:center;align-items:center;padding:var(--space-4) 0;">
+                <svg id="radarSvg" width="100%" viewBox="0 0 440 440" style="max-height:400px;max-width:440px;"></svg>
+            </div>
+        </div>
+
+        <!-- Comparative Decision Matrix Table -->
+        <div id="decisionMatrix" style="margin-top:var(--space-8);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3);">
+                <div style="font-family:var(--font-display);font-weight:600;font-size:var(--text-lg);color:var(--text);">
+                    Head-to-Head Factor Decision Matrix
+                </div>
+                <div style="font-size:var(--text-xs);color:var(--muted);">
+                    <span style="color:var(--lime);font-weight:700;">Highlight</span> indicates best option per criterion
+                </div>
+            </div>
+
+            <!-- Generated One-Sentence Summary Takeaway -->
+            <div id="compareSummaryBox" style="margin-bottom:var(--space-4);padding:12px 16px;background:var(--raised);border:1px solid var(--border);border-left:4px solid var(--lime);border-radius:10px;font-size:13.5px;line-height:1.5;display:none;">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-bottom:4px;">Comparative Takeaway</div>
+                <div id="compareSummaryText" style="color:var(--text);font-weight:500;"></div>
+            </div>
+
+            <div class="table-wrap">
+                <table id="decisionTable">
+                    <thead><tr id="decisionTableHead"></tr></thead>
+                    <tbody id="decisionTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        </div><!-- /compareScrollPane -->
+    </div>
+</div><!-- /tab-compare -->
+
+
+<!-- Legacy redirects — hidden tabs kept for JS compatibility -->
+<div class="tab-content" id="tab-predict" style="display:none;"></div>
+<div class="tab-content" id="tab-preferences" style="display:none;"></div>
+
+</main>
+
+<!-- ─── CLEAN FOOTER ─── -->
+<footer class="app-footer">
+    <div class="container app-footer__inner">
+        <!-- Col 1: Product -->
+        <div class="app-footer__col">
+            <h4 class="app-footer__heading">Product</h4>
+            <ul class="app-footer__list">
+                <li><a href="#" onclick="switchTab('find');return false;">Interactive Advisor</a></li>
+                <li><a href="#how-it-works">Product Tour (43s)</a></li>
+                <li><a href="#chances">All 23 IITs Directory</a></li>
+                <li><a href="/dev/components">Component Playground</a></li>
+            </ul>
+        </div>
+
+        <!-- Col 2: Analysis -->
+        <div class="app-footer__col">
+            <h4 class="app-footer__heading">Analysis</h4>
+            <ul class="app-footer__list">
+                <li><a href="#" onclick="switchTab('results');return false;">Recommendation Studio</a></li>
+                <li><a href="#" onclick="switchTab('trends');return false;">Cutoff Shifts &amp; Trends</a></li>
+                <li><a href="#" onclick="switchTab('compare');return false;">Side-by-Side Radar</a></li>
+                <li><a href="#" onclick="switchTab('peers');return false;">Students Like You</a></li>
+            </ul>
+        </div>
+
+        <!-- Col 3: Data & Method -->
+        <div class="app-footer__col">
+            <h4 class="app-footer__heading">Data &amp; Method</h4>
+            <ul class="app-footer__list">
+                <li><a href="#data-method">Official Cutoff Methodology</a></li>
+                <li><span class="app-footer__plain"><span data-stat="totalCutoffRecords" data-count="12947">12,947</span> Cutoff Records</span></li>
+                <li><span class="app-footer__plain">5 Years (2021–2025)</span></li>
+                <li><span class="app-footer__plain">23 Campuses · 229 Branches</span></li>
+            </ul>
+        </div>
+
+        <!-- Col 4: Legal & Settings -->
+        <div class="app-footer__col">
+            <h4 class="app-footer__heading">Legal &amp; Settings</h4>
+            <ul class="app-footer__list">
+                <li><a href="/iits/CREDITS.md" target="_blank">Photo Credits</a></li>
+                <li><span class="app-footer__plain">Official JoSAA Public Data</span></li>
+                <li><span class="app-footer__plain">NIRF Institutional Disclosures</span></li>
+            </ul>
+            <div class="app-footer__utilities">
+                <button class="app-footer__theme-toggle" onclick="toggleTheme()" title="Toggle Light / Dark theme" aria-label="Toggle theme">
+                    <i data-lucide="sun" width="14" height="14"></i>
+                    <span>Switch theme</span>
+                </button>
+                <div class="app-footer__shortcut-hint" onclick="openCmdPalette()" role="button" tabindex="0" title="Open command palette">
+                    <kbd>⌘K</kbd> / <kbd>Ctrl+K</kbd> <span>Commands</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container app-footer__bottom">
+        <div>&copy; 2025 Rankly · Designed for JEE Advanced Candidates.</div>
+        <div>Built for JEE Advanced 2025 Counselling · JoSAA 2021–2025 Cutoffs.</div>
+    </div>
+</footer>
+
+<script src="motion.js"></script>
+<script src="app.js"></script>
+<script>
+// ── Init Lucide icons after DOM ready ──
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.lucide) lucide.createIcons();
+});
+</script>
+
+</body>
+</html>

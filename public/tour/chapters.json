@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "time": 0,
+    "timeStr": "00:00",
+    "title": "Enter rank & city",
+    "subtitle": "Step 1",
+    "desc": "Input JEE Advanced rank (1414), home city Jaipur, and select branch (ECE)."
+  },
+  {
+    "id": 2,
+    "time": 9,
+    "timeStr": "00:09",
+    "title": "Weigh priorities",
+    "subtitle": "Step 2",
+    "desc": "Calibrate factor weights: Placement (100%), Mess (80%), and Campus life (30%)."
+  },
+  {
+    "id": 3,
+    "time": 16,
+    "timeStr": "00:16",
+    "title": "Inspect matches",
+    "subtitle": "Step 3",
+    "desc": "View candidate preview and generate categorized Safe, Moderate, and Reach seats."
+  },
+  {
+    "id": 4,
+    "time": 26,
+    "timeStr": "00:26",
+    "title": "Branch trends",
+    "subtitle": "Insights",
+    "desc": "Examine 5-year cutoff tightening, loosening, and the 23-IIT diverging heatmap."
+  },
+  {
+    "id": 5,
+    "time": 33,
+    "timeStr": "00:33",
+    "title": "Decision matrix",
+    "subtitle": "Compare",
+    "desc": "Side-by-side multi-factor evaluation with directional winner highlighting."
+  }
+]
